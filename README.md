@@ -4,8 +4,8 @@ This repo is for Maman 14
 
 ## Change Log
 
-26/01/2023:
+28/01/2023:
 
     -Opened repo
-
+    -Setup Project dir
     -Added Makefile
