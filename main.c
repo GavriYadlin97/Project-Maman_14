@@ -1,4 +1,4 @@
-/* Created by Gabi.y & Adi.s 28/01/2023. */
+/* Created by Gavri.y & Adi.s 28/01/2023. */
 #include <stdio.h>
 
 
