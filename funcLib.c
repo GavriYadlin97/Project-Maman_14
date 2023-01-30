@@ -22,7 +22,7 @@ error createFile (FILE **filePointer, char *filePath) {
     return success;
 }
 
-/* Function receives a pointer to a FILE pointer
+/* Function receives a FILE pointer
  * The function closes the file and alerts if any errors occurred
  * returns an error code represented as an error enum*/
 error closeFile (FILE *filePointer) {
