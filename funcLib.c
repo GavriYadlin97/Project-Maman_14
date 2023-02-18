@@ -2,6 +2,20 @@
 
 #include "mainHeader.h"
 
+/*add one node to head of the list*/
+void addToList(Node* newElement, List* list){
+    if(list->head == NULL)
+    {
+        list->head = newElement;
+        list->count++;
+        return;
+    }
+    newElement->next = list->head;
+    list->head = newElement;
+    list->count++;
+    return;
+}
+
 /* Function receives a pointer to a FILE pointer and a file path (string)
  * The function opens the file and alerts if any errors occurred
  * returns an error code represented as an error enum*/
@@ -71,3 +85,148 @@ error getToken(char **str, char **token, char *delim) {
         *token = NULL;
     return success;
 } /*Caller MUST free '*token' and '*str' */
+
+/* get one line in a time, the function receives pointer to a string and pointer to a file,
+ * takes one line from the file and copy it to the receiving string*/
+error getOneLine(char **line_out, FILE * fp) {
+    size_t buffer_size = LINE_MAX_LENGTH;
+    int bytes_readen = 0;
+    char * buffer = (char*)malloc(buffer_size*sizeof(char));
+    if (buffer == NULL) {
+        return noMemory;
+    }
+
+    while (1) {
+        char current = fgetc(fp);
+        if (current == EOF) {
+            *line_out=buffer;
+            free(buffer);
+            return endOfFile;
+        }
+        else if (current == '\n') {
+            buffer[bytes_readen] = '\0';
+            *line_out=buffer;
+            free(buffer);
+            return success;
+        }
+        /* Assuming a line of no more than 80 characters
+        else if (bytes_readen >= LINE_MAX_LENGTH - 1) {
+            *buffer= (char) realloc(*buffer,(int)((int)buffer_size*sizeof(char) )*2);
+            if (buffer == NULL) {
+                return noMemory;
+            }
+        }*/
+        else {
+            buffer[bytes_readen++] = current;
+        }
+    }
+}
+
+/*Checks if it is a definition of a macro "mcr" and if so return success
+ * the function receives two pointers of string, line and copy of line*/
+error is_mcr_def(char * line, char* lineOut){
+    char * word;
+    strcpy(&lineOut,line);
+    getToken(&lineOut,&word," ");
+    if(!strcmp(word,"mcr")){
+        return success;
+    }
+    else return noMcr;
+}
+
+/*Checks if it is a definition of an end of macro "endmcr" and if so return success
+ * the function receives pointer of string line */
+error is_mcrEnd(char *line){
+    char* linecpy;
+    char * word;
+    strcpy(linecpy,line);
+    getToken(&linecpy,&word," ");
+    if(!strcmp(word,"endmcr")){
+        return success;
+    }
+    else return noMcr;
+}
+
+/* function checks if it is a name of macro
+ * the function receives string of line, list of macros , and string of code
+ * if found name of macro, the string of code receive the code of the matching macro*/
+error is_name_of_mcr(char* line,List* mcrList,char* code){
+    char* linecpy=(char *) malloc(sizeof (char )*LINE_MAX_LENGTH);
+    char* word;
+    int i;
+    Node * currentNode;
+    if (mcrList->count==0)
+        return noMcr;
+    else {
+        strcpy(linecpy,line);
+        getToken(&linecpy,&word," ");
+        for(i=0;i<= mcrList->count;i++){
+            if(!strcmp(word,currentNode->data.name)){
+                code= currentNode->data.code;
+                return success;
+            }
+            currentNode=currentNode->next;
+        }
+    }
+    return noMcr;
+}
+/* the function return the name of the macro, the caller will call only if found definition of macro*/
+char* getNameOfMcr(char* line,char * name){
+    getToken(&line,&name," ");
+}
+
+
+error preAssembler(FILE* fileSrc,char* fileName){
+    FILE *fpSrc;
+    FILE *fpAm;
+    char ** line,*code, **linecpy,*name;
+    int error=0;
+    Node* ptrmcr;
+    line= (char **) malloc(sizeof (char)*LINE_MAX_LENGTH);
+    linecpy=(char **) malloc(sizeof (char)*LINE_MAX_LENGTH);
+
+    /*Building a linked list of macros*/
+    List * mcrList = calloc(1,sizeof (List));
+    if(!mcrList){
+        return noMemory;
+    }
+    Node * newNode = (Node*) malloc(sizeof (Node));
+    if(!newNode){
+        return noMemory;
+    }
+
+    //fpSrc= fopen(fileSrc,"r");
+    fpAm= fopen(fileName,"w");
+    while (!feof(fileSrc)){
+        if(!(error = getOneLine(&line,fileSrc)))
+        {
+            /*checks name of macro */
+            if(!is_name_of_mcr(line,mcrList,code)){
+                free(line);
+                fputs(code,fpAm);
+                free(code);
+            }
+            /*checks definition of macro "mcr"*/
+            if(!is_mcr_def(line,linecpy)){
+                getNameOfMcr(line,name);
+                ptrmcr->data.name=name;
+                addToList(ptrmcr,mcrList);
+                free(line);
+                free(linecpy);
+                free(name);
+                getOneLine(&line,"");
+                /*copying code to the node of the list until "endmcr"*/
+                while (!is_mcrEnd(line)){
+                    strcpy(ptrmcr->data.code,line);
+                }
+            }
+            else /*not macro definition or macro name*/
+            {
+                fputs(line, fpAm);
+                continue;
+            }
+        }
+    }
+}
+
+
