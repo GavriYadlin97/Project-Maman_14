@@ -15,8 +15,7 @@
 #define LINE_MAX_LENGTH 81
 #define TRUE 1
 #define FALSE 0
-#define MAX_MCR 256
-#define TABLE_SIZE 100
+
 
 /*Enum for various error handling*/
 typedef enum Error{
@@ -60,6 +59,6 @@ error createFile(FILE **filePointer, char *filePath);
 error closeFile(FILE *filePointer);
 error getToken(char **str, char **token, char *delim);
 error preAssembler(FILE* fileSrc,char* fileName);
-
+char* concatenateStrings(char* str1, char* str2);
 
 #endif /*PROJECT_MAMAN_14_MAINHEADER_H*/
