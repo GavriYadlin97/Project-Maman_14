@@ -75,8 +75,7 @@ error closeFile(FILE *filePointer);
 error getToken(char **str, char **token, char *delim);
 error getOneLine(char **line_out, FILE * fp);
 error insertSuffix(char *str,char **newStr,char *suffix);
-error preAssembler(FILE* fileSrc,char* fileName);
-char* concatenateStrings(char* str1, char* str2);
 error removeComments(char **str);
+char* removeWhiteSpace(char* str);
 
 #endif /*PROJECT_MAMAN_14_MAINHEADER_H*/

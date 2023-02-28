@@ -18,5 +18,13 @@ typedef struct List {
     Node *head;
 } List;
 
+char* concatenateStrings(char* str1, char* str2);
+void addToList(Node* newElement, List* list);
+struct Node* createNode(char * name, char* code);
+error is_mcr_def( char* lineOut);
+error is_mcrEnd(char *line);
+error is_name_of_mcr(char* line,List* mcrList,char* code);
+error preAssembler(FILE* fileSrc,char* fileName);
+char* concatenateStrings(char* str1, char* str2);
 
 #endif //PROJECT_MAMAN_14_PREASM_H
