@@ -1,6 +1,7 @@
 /* Created by Adi.s & Gavri.y 30/01/2023. */
 
 #include "mainHeader.h"
+#include "preAsm.h"
 
 /*add one node to head of the list*/
 void addToList(Node* newElement, List* list){
@@ -40,9 +41,9 @@ struct Node* createNode(char * name, char* code) {
 }
 
 char* removeWhiteSpace(char* str) {
-    int len = strlen(str),i;
-    char* result = str;
-    for ( i = 0; i < len; i++) {
+    int len = (int) strlen(str), i;
+    char *result = str;
+    for (i = 0; i < len; i++) {
         if (isspace(str[i])) {
             result++;
         } else {
@@ -92,8 +93,13 @@ error getToken(char **str, char **token, char *delim) {
     int i = 0;
     char *chAfterTok;
     /*Check that all parameters are good*/
-    if (!delim || !str || !(*str) || !token)
+    if (!delim || !str || !(*str) || !token) {
+        if (token)
+            *token = NULL;
+        if (str)
+            str = NULL;
         return emptyArg;
+    }
     /*Skip white spaces from the beginning of the string*/
     while (isspace((*str)[i]))
         i++;
@@ -101,6 +107,7 @@ error getToken(char **str, char **token, char *delim) {
     if ((*str)[i] == '\0') {
         free(*str);
         *str = NULL;
+        *token = NULL;
         return emptyArg;
     }
     /*If deliminator is found. Else, deliminator wasn't found*/
@@ -122,6 +129,30 @@ error getToken(char **str, char **token, char *delim) {
     return success;
 } /*Caller MUST free '*token' and '*str' */
 
+
+error insertSuffix(char *str,char **newStr,char *suffix) {
+    *newStr = (char *) malloc(strlen(str) + strlen(suffix) + 1);
+    if (!*newStr)
+        return memoryAllocErr;
+    strcpy(*newStr, str);
+    strcat(*newStr, suffix);
+    return success;
+}
+
+error removeComments(char **str) {
+    if (str == NULL || *str == NULL)
+        return emptyArg;
+    char *ch;
+    ch = strpbrk(*str, ";");
+    if (!ch)
+        return success;
+    *ch = '\0';
+    *str = (char *) realloc(*str, 1 + strlen(*str));
+    if (!(*str))
+        return memoryAllocErr;
+    return success;
+}
+
 /* get one line in a time, the function receives pointer to a string and pointer to a file,
  * takes one line from the file and copy it to the receiving string*/
 error getOneLine(char **line_out, FILE * fp) {
@@ -135,6 +166,7 @@ error getOneLine(char **line_out, FILE * fp) {
     while (1) {
         char current = fgetc(fp);
         if (current == EOF) {
+            buffer[bytes_readen] = '\0';
             *line_out=buffer;
             return endOfFile;
         }

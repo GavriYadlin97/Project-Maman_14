@@ -14,12 +14,6 @@
 #define DEST_OP_START 10
 #define ARE_START 12
 
-typedef enum ARE {
-    absolute = 0,
-    externaly = 1,
-    relocate = 2,
-} AREcode;
-
 typedef enum AddressMethod{
     immediate,
     direct,
@@ -27,30 +21,25 @@ typedef enum AddressMethod{
     directRegister,
 }addressMethod;
 
-
-typedef struct Label {
-    char *name;
-    char *value;
-    AREcode type;
-} Label;
-
 typedef struct Code {
-    char *name;
+    char name [LABEL_MAX_SIZE];
+    opcode type;
     int place;
     char InstructionCode[WORD];
-    AREcode addressing;
-} code;
+} Code;
 
 typedef struct Node {
-    code data;
+    Code data;
     struct Node *next;
-} node;
+} Node;
 
 typedef struct List {
     int count;
-    node *head;
+    Node *head;
 } list;
 
 error clearWhiteSpace(char **line);
+error firstRun (char *);
+void reverseSTR(char str[]);
 
 #endif //PROJECT_MAMAN_14_ASMFIRSTRUN_H

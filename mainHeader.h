@@ -15,7 +15,11 @@
 #define LINE_MAX_LENGTH 81
 #define TRUE 1
 #define FALSE 0
-
+#define MAX_MCR 256
+#define TABLE_SIZE 100
+#define WORD 15
+#define LABEL_MAX_SIZE 31
+#define SUFFIX_LENGTH 5
 
 /*Enum for various error handling*/
 typedef enum Error{
@@ -27,30 +31,41 @@ typedef enum Error{
     noMemory,
     endOfFile,
     noMcr,
+    undefinedCommand,
+    undefinedAddressing,
+    labelExists,
+    labelTooLong,
+    meaninglessLabel,
+    unknownArg,
+    missingClosingParentheses,
+    missingParentheses,
+
 }error;
 
 /*Enum for opcodes */
-typedef enum Opcode{
-    mov,cmp,add,sub,not,clr,lea,inc,dec,jmp,bne,red,prn,jsr,rts,stop,
-}opcode;
-
-typedef struct Mcr{
-    char* name;
-    char * code;
-}Mcr;
-
-typedef struct Node{
-    struct Mcr data;
-    struct Node* next;
-}Node;
-
-typedef struct List{
-    int count;
-    Node* head;
-}List;
-
-
-
+typedef enum Opcode {
+    mov = 0,
+    cmp = 1,
+    add = 2,
+    sub = 3,
+    not = 4,
+    clr = 5,
+    lea = 6,
+    inc = 7,
+    dec = 8,
+    jmp = 9,
+    bne = 10,
+    red = 11,
+    prn = 12,
+    jsr = 13,
+    rts = 14,
+    stop = 15,
+    data,
+    string,
+    entry,
+    external,
+    none,
+} opcode;
 
 
 /*Function header in main.c or funcLib.c only*/
@@ -58,7 +73,10 @@ error openFile(FILE **filePointer, char *filePath);
 error createFile(FILE **filePointer, char *filePath);
 error closeFile(FILE *filePointer);
 error getToken(char **str, char **token, char *delim);
+error getOneLine(char **line_out, FILE * fp);
+error insertSuffix(char *str,char **newStr,char *suffix);
 error preAssembler(FILE* fileSrc,char* fileName);
 char* concatenateStrings(char* str1, char* str2);
+error removeComments(char **str);
 
 #endif /*PROJECT_MAMAN_14_MAINHEADER_H*/
