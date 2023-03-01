@@ -16,7 +16,7 @@ void addToList(Node* newElement, List* list){
     list->count++;
 }
 
-// Function to create a new node
+/* Function to create a new node*/
 struct Node* createNode(char * name, char* code) {
     // Allocate memory for the new node
     struct Node* newNode = (struct Node*) malloc(sizeof(struct Node));

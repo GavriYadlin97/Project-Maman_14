@@ -36,9 +36,11 @@ typedef struct List {
     Node *head;
 } list;
 
+
 error clearWhiteSpace(char **line);
 error firstRun (char *);
 void reverseSTR(char str[]);
 error idArg(char *arg, addressMethod *AMarg);
+struct Node* createNodeFirstRun(char * name, opcode opcode, int place, char* instructionCode);
 
 #endif //PROJECT_MAMAN_14_ASMFIRSTRUN_H

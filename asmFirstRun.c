@@ -99,6 +99,22 @@ error idCommand(char *command, opcode *op) {
     return success;
 }
 
+/* Function to create a new node*/
+struct Node* createNodeFirstRun(char * name, opcode opcode, int place, char* instructionCode) {
+    // Allocate memory for the new node
+    struct Node* newNode = (struct Node*) malloc(sizeof(struct Node));
+    if (newNode == NULL) {
+        printf("Memory allocation failed");
+        exit(1);
+    }
+    strcpy(newNode->data.name, name);
+    newNode->data.type=opcode;
+    newNode->data.place=place;
+    strcpy(newNode->data.InstructionCode,instructionCode);
+    newNode->next = NULL;
+    return newNode;
+}
+
 static error addToList(list *lst, Node *nodeToAdd) {
     nodeToAdd->next = NULL;
     Node *ptr = lst->head;
@@ -108,6 +124,27 @@ static error addToList(list *lst, Node *nodeToAdd) {
         ptr->next = nodeToAdd;
     } else lst->head = nodeToAdd;
     lst->count++;
+    return success;
+}
+
+/*search node by name
+ * checks only if the names are the same
+ * received pointer to list and name (char*)*/
+static error searchNode(list* list, char* name,Node* nodeOut){
+    Node * currentNode=list->head;
+    int i;
+    if (list->count==0)
+        return success;
+    else {
+
+        for(i=0;i< list->count;i++){
+            if(!strcmp(name,currentNode->data.name)){
+                nodeOut=currentNode;
+                return labelExists;
+            }
+            currentNode=currentNode->next;
+        }
+    }
     return success;
 }
 
@@ -183,18 +220,7 @@ error codeString(char *line, list *dataList, int *counter) {
     return success;
 }
 
-error codeLabel(char *label,list *labelList, int *count, opcode op) {
-    Node *newNode = (Node *) malloc(sizeof(Node));
-    if (!label)
-        return emptyArg;
-    if (!newNode)
-        return memoryAllocErr;
-    newNode->data.type = op;
-    newNode->data.place = (*count)++;
-    strcpy(newNode->data.name, label);
-    addToList(labelList, newNode);
-    return success;
-}
+
 
 error codeCommand (char *line, list instructionList, int *count) {
     addressMethod am1, am2;
@@ -207,6 +233,23 @@ error codeCommand (char *line, list instructionList, int *count) {
         getToken(&line, &arg2, NULL);
     idArg(arg1,&am1);
     idArg(arg2,&am2);
+}
+
+error codeLabel (opcode type, char* line, list* labelList){
+    Node* node= malloc(sizeof (Node));
+    char* label;
+    if(!node){
+        return memoryAllocErr;
+    }
+
+    if(!searchNode(labelList,line,node)){
+        Node * newNode= createNodeFirstRun(line,type,-1,NULL);
+        addToList(labelList,newNode);
+    }
+    else{
+        printf(stderr,"The definition of label /s already exists",&node->data.name);
+        return labelExists;
+    }
 }
 
 error idArg(char *arg, addressMethod *amArg) {
@@ -250,18 +293,21 @@ error firstRun (char *path) {
             break;
         case data:
             codeData(line, &dataList, &DC);
-            codeLabel(label, &labelList, &DC, commandCode);
             break;
         case string:
             codeString(line, &dataList, &DC);
-            codeLabel(label, &labelList, &DC, commandCode);
             break;
         case external:
         case entry:
             errFlag = meaninglessLabel;
             free(label);
             getToken(&line, &label, ",\n");
-            codeLabel(label, &labelList, &DC, commandCode);
+            if (!strcmp(line,"")){
+                codeLabel(entry,label,&labelList);
+            }
+            else{
+                //printf(stderr,)
+            }
             DC--;
             break;
         case mov:
