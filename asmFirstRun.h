@@ -27,12 +27,10 @@ typedef struct Code {
     int place;
     char InstructionCode[WORD];
 } Code;
-
 typedef struct Node {
     Code data;
     struct Node *next;
 } Node;
-
 typedef struct List {
     int count;
     Node *head;
@@ -41,5 +39,6 @@ typedef struct List {
 error clearWhiteSpace(char **line);
 error firstRun (char *);
 void reverseSTR(char str[]);
+error idArg(char *arg, addressMethod *AMarg);
 
 #endif //PROJECT_MAMAN_14_ASMFIRSTRUN_H

@@ -39,7 +39,7 @@ typedef enum Error{
     unknownArg,
     missingClosingParentheses,
     missingParentheses,
-
+    missingComma,
 }error;
 
 /*Enum for opcodes */

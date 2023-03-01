@@ -129,14 +129,17 @@ error codeData(char *line, list *dataList, int *counter) {
     Node *newNode;
     getToken(&line, &word, ",\n");
     while (word != NULL) {
+        num = strlen(word);
         clearWhiteSpace(&word);
+        if (num != strlen(word))
+            return missingComma;
         num = strtol(word, &endPTR, 10);
         if (strcmp(endPTR, ""))
             return unknownArg;
         newNode = (Node *) malloc(sizeof(Node));
         binaryOf(newNode->data.InstructionCode, num);
         addToList(dataList, newNode);
-        counter++;
+        (*counter)++;
         free(word);
         getToken(&line, &word, ",\n\0");
         if (!word) {
@@ -148,19 +151,15 @@ error codeData(char *line, list *dataList, int *counter) {
 }
 
 error codeString(char *line, list *dataList, int *counter) {
-    Node *OGNode = dataList->head;
-    Node *newNode;
+    Node *newNode, *OGNode = dataList->head;
     int i = 0;
-    char ch = line[i];
-    char code[WORD];
+    char code[WORD], ch = line[i];
     if (line == NULL)
         return emptyArg;
-    while (OGNode->next) {
+    while (OGNode->next)
         OGNode = OGNode->next;
-    }
-    while (ch != '\0' && ch != '\"') {
+    while (ch != '\0' && ch != '\"')
         ch = line[i++];
-    }
     if (ch == '\0')
         return missingParentheses;
     ch = line[++i];
@@ -168,7 +167,7 @@ error codeString(char *line, list *dataList, int *counter) {
         newNode = (Node *) malloc(sizeof(Node));
         binaryOf(newNode->data.InstructionCode, line[i]);
         addToList(dataList, newNode);
-        counter++;
+        (*counter)++;
         ch = line[++i];
     }
     newNode = (Node *) malloc(sizeof(Node));
@@ -185,9 +184,9 @@ error codeString(char *line, list *dataList, int *counter) {
 }
 
 error codeLabel(char *label,list *labelList, int *count, opcode op) {
-    if(!label)
-        return emptyArg;
     Node *newNode = (Node *) malloc(sizeof(Node));
+    if (!label)
+        return emptyArg;
     if (!newNode)
         return memoryAllocErr;
     newNode->data.type = op;
@@ -195,6 +194,31 @@ error codeLabel(char *label,list *labelList, int *count, opcode op) {
     strcpy(newNode->data.name, label);
     addToList(labelList, newNode);
     return success;
+}
+
+error codeCommand (char *line, list instructionList, int *count) {
+    addressMethod am1, am2;
+    char *label, *arg1, *arg2;
+    getToken(&line, &label, "(");
+    getToken(&line, &arg1, ",");
+    if (label)
+        getToken(&line, &arg2, ")");
+    else
+        getToken(&line, &arg2, NULL);
+    idArg(arg1,&am1);
+    idArg(arg2,&am2);
+}
+
+error idArg(char *arg, addressMethod *amArg) {
+
+    clearWhiteSpace(&arg);
+    if (arg[0] == '#')
+        *amArg = immediate;
+    else if (strlen(arg) == 2 && arg[0] == 'r' && '0' <= arg[1] && arg[1] <= '7')
+        *amArg=directRegister;
+    else
+        return success;
+
 }
 
 error firstRun (char *path) {
@@ -207,14 +231,13 @@ error firstRun (char *path) {
     FILE *stream;
     int IC = 0;
     int DC = 0;
-    char *label, *word;
+    char *label, *word, *filepath;
     char *line = (char *) malloc(LINE_MAX_LENGTH);
-    char *filepath = (char *) malloc(strlen(path) + SUFFIX_LENGTH);
     if (!line)
         return memoryAllocErr;
     if (!filepath)
         return memoryAllocErr;
-    insertSuffix(path, &filepath, ".ob");
+    insertSuffix(path, &filepath, ".am");
     openFile(&stream, filepath);
     getOneLine(&line, stream);
     removeComments(&line);
@@ -226,18 +249,18 @@ error firstRun (char *path) {
             errFlag = undefinedCommand;
             break;
         case data:
-            codeData(line, &dataList,&DC);
+            codeData(line, &dataList, &DC);
             codeLabel(label, &labelList, &DC, commandCode);
             break;
         case string:
-            codeString(line, &dataList,&DC);
+            codeString(line, &dataList, &DC);
             codeLabel(label, &labelList, &DC, commandCode);
             break;
         case external:
         case entry:
             errFlag = meaninglessLabel;
             free(label);
-            getToken(&line,&label,",\n");
+            getToken(&line, &label, ",\n");
             codeLabel(label, &labelList, &DC, commandCode);
             DC--;
             break;
@@ -247,7 +270,6 @@ error firstRun (char *path) {
         case sub:
         case lea:
 
-            break;
         case not:
         case clr:
         case inc:
@@ -258,10 +280,9 @@ error firstRun (char *path) {
         case prn:
         case jsr:
 
-            break;
         case rts:
         case stop:
-
+            codeCommand(line, instructionList, &IC);
             break;
     }
     while (line) {

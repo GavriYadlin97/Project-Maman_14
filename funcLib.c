@@ -1,7 +1,6 @@
 /* Created by Adi.s & Gavri.y 30/01/2023. */
 
 #include "mainHeader.h"
-#include "preAsm.h"
 
 /*remove white spaces from the beginning of the string
  * received pointer to string
@@ -59,12 +58,22 @@ error getToken(char **str, char **token, char *delim) {
     int i = 0;
     char *chAfterTok;
     /*Check that all parameters are good*/
-    if (!delim || !str || !(*str) || !token) {
+    if (!str || !(*str) || !token) {
         if (token)
             *token = NULL;
         if (str)
             str = NULL;
         return emptyArg;
+    }
+    /*if delim is null, copy entire string to token*/
+    if (!delim) {
+        *token = (char *) malloc(strlen(*str) + 1);
+        if (!*token)
+            return memoryAllocErr;
+        strcpy(*token, *str);
+        free(*str);
+        *str = NULL;
+        return success;
     }
     /*Skip white spaces from the beginning of the string*/
     while (isspace((*str)[i]))
@@ -95,7 +104,6 @@ error getToken(char **str, char **token, char *delim) {
     return success;
 } /*Caller MUST free '*token' and '*str' */
 
-
 error insertSuffix(char *str,char **newStr,char *suffix) {
     *newStr = (char *) malloc(strlen(str) + strlen(suffix) + 1);
     if (!*newStr)
@@ -124,32 +132,22 @@ error removeComments(char **str) {
 error getOneLine(char **line_out, FILE * fp) {
     size_t buffer_size = LINE_MAX_LENGTH;
     int bytes_readen = 0;
-    char * buffer = (char*)malloc(buffer_size*sizeof(char));
+    char *buffer = (char *) malloc(buffer_size * sizeof(char));
     if (buffer == NULL) {
         return noMemory;
     }
-
     while (1) {
         char current = fgetc(fp);
         if (current == EOF) {
             buffer[bytes_readen] = '\n';
             buffer[++bytes_readen] = '\0';
-            *line_out=buffer;
+            *line_out = buffer;
             return endOfFile;
-        }
-        else if (current == '\n') {
+        } else if (current == '\n') {
             buffer[bytes_readen] = '\0';
-            *line_out=buffer;
+            *line_out = buffer;
             return success;
-        }
-        /* Assuming a line of no more than 80 characters
-        else if (bytes_readen >= LINE_MAX_LENGTH - 1) {
-            *buffer= (char) realloc(*buffer,(int)((int)buffer_size*sizeof(char) )*2);
-            if (buffer == NULL) {
-                return noMemory;
-            }
-        }*/
-        else {
+        } else {
             buffer[bytes_readen++] = current;
         }
     }
