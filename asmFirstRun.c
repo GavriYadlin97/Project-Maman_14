@@ -224,8 +224,8 @@ error codeCommand (char *line, list *instructionList, opcode command, int *count
     char *label, *arg1, *arg2, *endPTR;
     char instruction[WORD], immediateArg[12], regiCode[6] = {'.', '.', '.', '.', '.', '.'},
             opCode[4], dataCode[2];
-    int argVal = 0,i=0;
-    Node *newNode = (Node *) malloc(sizeof(Node));
+    int argVal = 0, i = 0;
+    Node *newNode = (Node *) calloc(1, sizeof(Node));
     if (!newNode)
         return memoryAllocErr;
     getToken(&line, &label, "(");
@@ -253,10 +253,22 @@ error codeCommand (char *line, list *instructionList, opcode command, int *count
         case jmp:
         case bne:
         case jsr:
+            if (arg1 && arg2) {
+                binaryOf(dataCode, jumpWP, sizeof(dataCode));
+                memcpy(instruction + DEST_AM_START, dataCode, sizeof(dataCode));
+            }
             binaryOf(dataCode, am1, sizeof(dataCode));
             memcpy(instruction + PRM_1_START, dataCode, sizeof(dataCode));
             binaryOf(dataCode, am2, sizeof(dataCode));
             memcpy(instruction + PRM_2_START, dataCode, sizeof(dataCode));
+            memcpy(newNode->data.InstructionCode, instruction, strlen(instruction) + 1);
+            newNode->data.place = (*count)++;
+            addToList(instructionList, newNode);
+            newNode = (Node *) calloc(1, sizeof(Node));
+            if (!newNode)
+                return memoryAllocErr;
+            instruction[0] = '\0';
+            strcpy(newNode->data.name, label);
             break;
         default:
             memcpy(instruction + PRM_1_START, "..", strlen(".."));
@@ -269,7 +281,7 @@ error codeCommand (char *line, list *instructionList, opcode command, int *count
     if (arg1) {
         switch (am1) {
             case immediate:
-                newNode = (Node *) malloc(sizeof(Node));
+                newNode = (Node *) calloc(1, sizeof(Node));
                 if (!newNode)
                     return memoryAllocErr;
                 argVal = strtol(arg1 + 1, &endPTR, 10);
@@ -281,25 +293,36 @@ error codeCommand (char *line, list *instructionList, opcode command, int *count
                 memcpy(newNode->data.InstructionCode, instruction, sizeof(instruction));
                 newNode->data.place = (*count)++;
                 addToList(instructionList, newNode);
-                for (i = 0; i < sizeof(instruction)-1; ++i)
+                for (i = 0; i < sizeof(instruction) - 1; ++i)
                     instruction[i] = '.';
 
                 break;
             case directRegister:
+                for (i = 0; i < sizeof(instruction) - 1; ++i)
+                    instruction[i] = '.';
                 binaryOf(regiCode, arg1[1] - '0', sizeof(regiCode));
                 memcpy(instruction, regiCode, sizeof(regiCode));
                 memcpy(instruction + ARE_START, "..", 1 + strlen(".."));
                 break;
             default:
+                newNode = (Node *) calloc(1, sizeof(Node));
+                if (!newNode)
+                    return memoryAllocErr;
+                strcpy(newNode->data.name, arg1);
+                instruction[0] = '\0';
+                addToList(instructionList, newNode);
                 break;
         }
     }
     if (arg2) {
-        newNode = (Node *) malloc(sizeof(Node));
+        newNode = (Node *) calloc(1, sizeof(Node));
         if (!newNode)
             return memoryAllocErr;
         switch (am2) {
             case immediate:
+                memcpy(newNode->data.InstructionCode, instruction, sizeof(instruction));
+                addToList(instructionList, newNode);
+                newNode = (Node *) calloc(1, sizeof(Node));
                 argVal = strtol(arg2 + 1, &endPTR, 10);
                 if (strcmp(endPTR, ""))
                     return unknownArg;
@@ -308,7 +331,6 @@ error codeCommand (char *line, list *instructionList, opcode command, int *count
                 memcpy(instruction + ARE_START, "..", 1 + strlen(".."));
                 memcpy(newNode->data.InstructionCode, instruction, sizeof(instruction));
                 newNode->data.place = (*count)++;
-                addToList(instructionList, newNode);
                 break;
             case directRegister:
                 binaryOf(regiCode, arg2[1] - '0', sizeof(regiCode));
@@ -316,15 +338,32 @@ error codeCommand (char *line, list *instructionList, opcode command, int *count
                 memcpy(instruction + ARE_START, "..", 1 + strlen(".."));
                 memcpy(newNode->data.InstructionCode, instruction, sizeof(instruction));
                 newNode->data.place = (*count)++;
-                addToList(instructionList, newNode);
                 break;
             default:
+                memcpy(newNode->data.InstructionCode, instruction, sizeof(instruction));
+                addToList(instructionList, newNode);
+                newNode = (Node *) calloc(1, sizeof(Node));
+                strcpy(newNode->data.name, arg2);
+                instruction[0] = '\0';
                 break;
         }
+        addToList(instructionList, newNode);
     }
     return success;
 }
 
+error printList (list *lst, Node **node) {
+    if (node && *node) {
+        if (strcmp((*node)->data.InstructionCode, ""))
+            printf("%s\n", (*node)->data.InstructionCode);
+        else
+            printf("%s\n",(*node)->data.name);
+        if ((*node)->next)
+            printList(lst, &((*node)->next));
+    } else if (lst->head)
+        printList(lst, &(lst->head));
+    return success;
+}
 
 error codeLabel (opcode type, char* line ,char* label, list* labelList){
     getToken(&line,&label,",");
@@ -365,7 +404,7 @@ error idArg(char *arg, addressMethod *amArg) {
         *amArg = directRegister;
         return success;
     } else
-        return success;
+        *amArg = direct;
     return unknownArg;
 }
 
@@ -387,43 +426,42 @@ error firstRun (char *path) {
         return memoryAllocErr;
     insertSuffix(path, &filepath, ".am");
     openFile(&stream, filepath);
-   while(!feof(stream)) {
-       getOneLine(&line, stream);
-       removeComments(&line);
-       getToken(&line, &label, ":"); /*Get label if exists*/
-       getToken(&line, &word, " \t\n"); /*Get first word of line*/
-       idCommand(word, &commandCode); /*Identify the command and assign an enum value */
-       switch (commandCode) {
-           case none:
-               errFlag = undefinedCommand;
-               break;
-           case data:
-               codeData(line, &dataList, &DC);
-               break;
-           case string:
-               codeString(line, &dataList, &DC);
-               break;
-           case external:
-               if(!label) {
-                   errFlag = meaninglessLabel;
-                   free(label);
-                   codeLabel(external,line,label,&labelList);
-               }
-               else
-                   codeLabel(external,line,label,&labelList);
-               break;
-           case entry:
-               if(!label) {
-                   errFlag = meaninglessLabel;
-                   free(label);
-                   codeLabel(entry,line,label,&labelList);
-               }
-               else
-                   codeLabel(entry,line,label,&labelList);
-               break;
-           default:
-               codeCommand(line, &instructionList, commandCode, &IC);
-               break;
-       }
-   }
+    while (!feof(stream)) {
+        getOneLine(&line, stream);
+        removeComments(&line);
+        getToken(&line, &label, ":"); /*Get label if exists*/
+        getToken(&line, &word, " \t\n"); /*Get first word of line*/
+        idCommand(word, &commandCode); /*Identify the command and assign an enum value */
+        switch (commandCode) {
+            case none:
+                errFlag = undefinedCommand;
+                break;
+            case data:
+                codeData(line, &dataList, &DC);
+                break;
+            case string:
+                codeString(line, &dataList, &DC);
+                break;
+            case external:
+                if (!label) {
+                    errFlag = meaninglessLabel;
+                    free(label);
+                    codeLabel(external, line, label, &labelList);
+                } else
+                    codeLabel(external, line, label, &labelList);
+                break;
+            case entry:
+                if (!label) {
+                    errFlag = meaninglessLabel;
+                    free(label);
+                    codeLabel(entry, line, label, &labelList);
+                } else
+                    codeLabel(entry, line, label, &labelList);
+                break;
+            default:
+                codeCommand(line, &instructionList, commandCode, &IC);
+                printList(&instructionList, NULL);
+                break;
+        }
+    }
 }
