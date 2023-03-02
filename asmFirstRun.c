@@ -3,7 +3,7 @@
 #include "mainHeader.h"
 #include "asmFirstRun.h"
 
-void binaryOf(char binaryForm[], unsigned num) {
+void binaryOf(char binaryForm[], unsigned num, int size) {
     int i = 0;
     while (num > 0) {
         if (num % 2 == 0)
@@ -13,16 +13,15 @@ void binaryOf(char binaryForm[], unsigned num) {
         num /= 2;
         i++;
     }
-    while (i<WORD)
+    while (i < size)
         binaryForm[i++] = '.';
-    binaryForm[WORD - 1] = '\0';
-    reverseSTR(binaryForm);
+    reverseSTR(binaryForm, size);
 }
 
-void reverseSTR(char str[]) {
+void reverseSTR(char str[],int size) {
     int a = 0, b = 0;
     char temp;
-    while (b < WORD && str[b + 1] != '\0')
+    while (b < size-1 && str[b + 1] != '\0')
         b++;
     while (b >= a) {
         temp = str[a];
@@ -174,7 +173,7 @@ error codeData(char *line, list *dataList, int *counter) {
         if (strcmp(endPTR, ""))
             return unknownArg;
         newNode = (Node *) malloc(sizeof(Node));
-        binaryOf(newNode->data.InstructionCode, num);
+        binaryOf(newNode->data.InstructionCode, num, sizeof(newNode->data.InstructionCode));
         addToList(dataList, newNode);
         (*counter)++;
         free(word);
@@ -202,13 +201,13 @@ error codeString(char *line, list *dataList, int *counter) {
     ch = line[++i];
     while (ch != '\0' && ch != '\"') {
         newNode = (Node *) malloc(sizeof(Node));
-        binaryOf(newNode->data.InstructionCode, line[i]);
+        binaryOf(newNode->data.InstructionCode, line[i], sizeof(newNode->data.InstructionCode));
         addToList(dataList, newNode);
         (*counter)++;
         ch = line[++i];
     }
     newNode = (Node *) malloc(sizeof(Node));
-    binaryOf(newNode->data.InstructionCode, '\0');
+    binaryOf(newNode->data.InstructionCode, '\0', sizeof(newNode->data.InstructionCode));
     addToList(dataList, newNode);
     counter++;
     if (ch != '\"') {
@@ -220,20 +219,112 @@ error codeString(char *line, list *dataList, int *counter) {
     return success;
 }
 
-
-
-error codeCommand (char *line, list instructionList, int *count) {
+error codeCommand (char *line, list *instructionList, opcode command, int *count) {
     addressMethod am1, am2;
-    char *label, *arg1, *arg2;
+    char *label, *arg1, *arg2, *endPTR;
+    char instruction[WORD], immediateArg[12], regiCode[6] = {'.', '.', '.', '.', '.', '.'},
+            opCode[4], dataCode[2];
+    int argVal = 0,i=0;
+    Node *newNode = (Node *) malloc(sizeof(Node));
+    if (!newNode)
+        return memoryAllocErr;
     getToken(&line, &label, "(");
     getToken(&line, &arg1, ",");
     if (label)
         getToken(&line, &arg2, ")");
     else
         getToken(&line, &arg2, NULL);
-    idArg(arg1,&am1);
-    idArg(arg2,&am2);
+    /*code the command*/
+    binaryOf(opCode, command, sizeof(opCode));
+    memcpy(instruction + OPCODE_START, opCode, sizeof(opCode));
+    /*if only one arg: move it to destination arg*/
+    if (arg2 == NULL) {
+        arg2 = arg1;
+        arg1 = NULL;
+    }
+    idArg(arg1, &am1);
+    binaryOf(dataCode, am1, sizeof(dataCode));
+    memcpy(instruction + SRC_AM_START, dataCode, sizeof(dataCode));
+    idArg(arg2, &am2);
+    binaryOf(dataCode, am2, sizeof(dataCode));
+    memcpy(instruction + DEST_AM_START, dataCode, sizeof(dataCode));
+    memcpy(instruction + ARE_START, "..", 1 + strlen("..")); /*command A.R.E is 0*/
+    switch (command) {
+        case jmp:
+        case bne:
+        case jsr:
+            binaryOf(dataCode, am1, sizeof(dataCode));
+            memcpy(instruction + PRM_1_START, dataCode, sizeof(dataCode));
+            binaryOf(dataCode, am2, sizeof(dataCode));
+            memcpy(instruction + PRM_2_START, dataCode, sizeof(dataCode));
+            break;
+        default:
+            memcpy(instruction + PRM_1_START, "..", strlen(".."));
+            memcpy(instruction + PRM_2_START, "..", strlen(".."));
+            break;
+    }
+    memcpy(newNode->data.InstructionCode, instruction, strlen(instruction) + 1);
+    newNode->data.place = (*count)++;
+    addToList(instructionList, newNode);
+    if (arg1) {
+        switch (am1) {
+            case immediate:
+                newNode = (Node *) malloc(sizeof(Node));
+                if (!newNode)
+                    return memoryAllocErr;
+                argVal = strtol(arg1 + 1, &endPTR, 10);
+                if (strcmp(endPTR, ""))
+                    return unknownArg;
+                binaryOf(immediateArg, argVal, sizeof(immediateArg));
+                memcpy(instruction, immediateArg, sizeof(immediateArg));
+                memcpy(instruction + ARE_START, "..", 1 + strlen(".."));
+                memcpy(newNode->data.InstructionCode, instruction, sizeof(instruction));
+                newNode->data.place = (*count)++;
+                addToList(instructionList, newNode);
+                for (i = 0; i < sizeof(instruction)-1; ++i)
+                    instruction[i] = '.';
+
+                break;
+            case directRegister:
+                binaryOf(regiCode, arg1[1] - '0', sizeof(regiCode));
+                memcpy(instruction, regiCode, sizeof(regiCode));
+                memcpy(instruction + ARE_START, "..", 1 + strlen(".."));
+                break;
+            default:
+                break;
+        }
+    }
+    if (arg2) {
+        newNode = (Node *) malloc(sizeof(Node));
+        if (!newNode)
+            return memoryAllocErr;
+        switch (am2) {
+            case immediate:
+                argVal = strtol(arg2 + 1, &endPTR, 10);
+                if (strcmp(endPTR, ""))
+                    return unknownArg;
+                binaryOf(immediateArg, argVal, sizeof(immediateArg));
+                memcpy(instruction + REGI_1_START, immediateArg, sizeof(immediateArg));
+                memcpy(instruction + ARE_START, "..", 1 + strlen(".."));
+                memcpy(newNode->data.InstructionCode, instruction, sizeof(instruction));
+                newNode->data.place = (*count)++;
+                addToList(instructionList, newNode);
+                break;
+            case directRegister:
+                binaryOf(regiCode, arg2[1] - '0', sizeof(regiCode));
+                memcpy(instruction + REGI_2_START, regiCode, sizeof(regiCode));
+                memcpy(instruction + ARE_START, "..", 1 + strlen(".."));
+                memcpy(newNode->data.InstructionCode, instruction, sizeof(instruction));
+                newNode->data.place = (*count)++;
+                addToList(instructionList, newNode);
+                break;
+            default:
+                break;
+        }
+    }
+    return success;
 }
+
 
 error codeLabel (opcode type, char* line, list* labelList){
     Node* node= malloc(sizeof (Node));
@@ -247,21 +338,26 @@ error codeLabel (opcode type, char* line, list* labelList){
         addToList(labelList,newNode);
     }
     else{
-        printf(stderr,"The definition of label /s already exists",&node->data.name);
+        fprintf(stderr,"The definition of label /s already exists",&node->data.name);
         return labelExists;
     }
 }
 
 error idArg(char *arg, addressMethod *amArg) {
-
+    if (!arg) {
+        *amArg = 0;
+        return emptyArg;
+    }
     clearWhiteSpace(&arg);
-    if (arg[0] == '#')
+    if (arg[0] == '#') {
         *amArg = immediate;
-    else if (strlen(arg) == 2 && arg[0] == 'r' && '0' <= arg[1] && arg[1] <= '7')
-        *amArg=directRegister;
-    else
         return success;
-
+    } else if (strlen(arg) == 2 && arg[0] == 'r' && '0' <= arg[1] && arg[1] <= '7') {
+        *amArg = directRegister;
+        return success;
+    } else
+        return success;
+    return unknownArg;
 }
 
 error firstRun (char *path) {
@@ -284,6 +380,7 @@ error firstRun (char *path) {
     openFile(&stream, filepath);
     getOneLine(&line, stream);
     removeComments(&line);
+    printf("%s",line);
     getToken(&line, &label, ":"); /*Get label if exists*/
     getToken(&line, &word, " \t\n"); /*Get first word of line*/
     idCommand(word, &commandCode); /*Identify the command and assign an enum value */
@@ -310,29 +407,8 @@ error firstRun (char *path) {
             }
             DC--;
             break;
-        case mov:
-        case cmp:
-        case add:
-        case sub:
-        case lea:
-
-        case not:
-        case clr:
-        case inc:
-        case dec:
-        case jmp:
-        case bne:
-        case red:
-        case prn:
-        case jsr:
-
-        case rts:
-        case stop:
-            codeCommand(line, instructionList, &IC);
+        default:
+            codeCommand(line, &instructionList, commandCode,&IC);
             break;
-    }
-    while (line) {
-        free(word);
-        getToken(&line, &word, "(,);\n");
     }
 }

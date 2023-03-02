@@ -8,18 +8,20 @@
 #define PROJECT_MAMAN_14_ASMFIRSTRUN_H
 
 #define PRM_1_START 0
+#define REGI_1_START 0
 #define PRM_2_START 2
 #define OPCODE_START 4
-#define SRC_OP_START 8
-#define DEST_OP_START 10
+#define REGI_2_START 6
+#define SRC_AM_START 8
+#define DEST_AM_START 10
 #define ARE_START 12
 
-typedef enum AddressMethod{
-    immediate,
-    direct,
-    jumpWP,
-    directRegister,
-}addressMethod;
+typedef enum AddressMethod {
+    immediate = 0,
+    direct = 1,
+    jumpWP = 2,
+    directRegister = 3,
+} addressMethod;
 
 typedef struct Code {
     char name [LABEL_MAX_SIZE];
@@ -39,7 +41,7 @@ typedef struct List {
 
 error clearWhiteSpace(char **line);
 error firstRun (char *);
-void reverseSTR(char str[]);
+void reverseSTR(char str[], int);
 error idArg(char *arg, addressMethod *AMarg);
 struct Node* createNodeFirstRun(char * name, opcode opcode, int place, char* instructionCode);
 
