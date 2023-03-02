@@ -138,7 +138,7 @@ static error searchNode(list* list, char* name,Node* nodeOut){
 
         for(i=0;i< list->count;i++){
             if(!strcmp(name,currentNode->data.name)){
-                nodeOut=currentNode;
+                *nodeOut=*currentNode;
                 return labelExists;
             }
             currentNode=currentNode->next;
@@ -326,20 +326,29 @@ error codeCommand (char *line, list *instructionList, opcode command, int *count
 }
 
 
-error codeLabel (opcode type, char* line, list* labelList){
-    Node* node= malloc(sizeof (Node));
-    char* label;
-    if(!node){
-        return memoryAllocErr;
-    }
+error codeLabel (opcode type, char* line ,char* label, list* labelList){
+    getToken(&line,&label,",");
+    if(label==NULL) {
+        getToken(&line, &label, NULL);
+        clearWhiteSpace(&label);
+        if (line == NULL) {
+            Node* node= malloc(sizeof (Node));
+            if(!node){
+                return memoryAllocErr;
+            }
 
-    if(!searchNode(labelList,line,node)){
-        Node * newNode= createNodeFirstRun(line,type,-1,NULL);
-        addToList(labelList,newNode);
+            if(!searchNode(labelList,label,node)){
+                Node * newNode= createNodeFirstRun(label,type,-1,"");
+                addToList(labelList,newNode);
+            }
+            else{
+                fprintf(stderr,"Error: The definition of label %s is already exists\n",node->data.name);
+                return labelExists;
+            }
+        }
     }
-    else{
-        fprintf(stderr,"The definition of label /s already exists",&node->data.name);
-        return labelExists;
+    else {
+        fprintf(stderr, "Error: definition of two labels at once\n");
     }
 }
 
@@ -378,37 +387,43 @@ error firstRun (char *path) {
         return memoryAllocErr;
     insertSuffix(path, &filepath, ".am");
     openFile(&stream, filepath);
-    getOneLine(&line, stream);
-    removeComments(&line);
-    printf("%s",line);
-    getToken(&line, &label, ":"); /*Get label if exists*/
-    getToken(&line, &word, " \t\n"); /*Get first word of line*/
-    idCommand(word, &commandCode); /*Identify the command and assign an enum value */
-    switch (commandCode) {
-        case none:
-            errFlag = undefinedCommand;
-            break;
-        case data:
-            codeData(line, &dataList, &DC);
-            break;
-        case string:
-            codeString(line, &dataList, &DC);
-            break;
-        case external:
-        case entry:
-            errFlag = meaninglessLabel;
-            free(label);
-            getToken(&line, &label, ",\n");
-            if (!strcmp(line,"")){
-                codeLabel(entry,label,&labelList);
-            }
-            else{
-                //printf(stderr,)
-            }
-            DC--;
-            break;
-        default:
-            codeCommand(line, &instructionList, commandCode,&IC);
-            break;
-    }
+   while(!feof(stream)) {
+       getOneLine(&line, stream);
+       removeComments(&line);
+       getToken(&line, &label, ":"); /*Get label if exists*/
+       getToken(&line, &word, " \t\n"); /*Get first word of line*/
+       idCommand(word, &commandCode); /*Identify the command and assign an enum value */
+       switch (commandCode) {
+           case none:
+               errFlag = undefinedCommand;
+               break;
+           case data:
+               codeData(line, &dataList, &DC);
+               break;
+           case string:
+               codeString(line, &dataList, &DC);
+               break;
+           case external:
+               if(!label) {
+                   errFlag = meaninglessLabel;
+                   free(label);
+                   codeLabel(external,line,label,&labelList);
+               }
+               else
+                   codeLabel(external,line,label,&labelList);
+               break;
+           case entry:
+               if(!label) {
+                   errFlag = meaninglessLabel;
+                   free(label);
+                   codeLabel(entry,line,label,&labelList);
+               }
+               else
+                   codeLabel(entry,line,label,&labelList);
+               break;
+           default:
+               codeCommand(line, &instructionList, commandCode, &IC);
+               break;
+       }
+   }
 }
