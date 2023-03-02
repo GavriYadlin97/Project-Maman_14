@@ -3,8 +3,22 @@
 #include "mainHeader.h"
 #include "preAsm.h"
 
+static error clearList (ListMcr *lst, NodeMcr **node) {
+    if (node && *node) {
+        if ((*node)->next)
+            clearList(lst, &((*node)->next));
+        free((*node)->data.name);
+        free((*node)->data.code);
+        free(*node);
+        *node = NULL;
+        lst->count--;
+    } else if (lst->head)
+        clearList(lst, &(lst->head));
+    return success;
+}
+
 /*add one node to head of the list*/
-void addToList(Node* newElement, List* list){
+void addToList(NodeMcr * newElement, ListMcr * list){
     if(list->head == NULL)
     {
         list->head = newElement;
@@ -17,9 +31,9 @@ void addToList(Node* newElement, List* list){
 }
 
 /* Function to create a new node*/
-struct Node* createNode(char * name, char* code) {
+struct NodeMcr * createNode(char * name, char* code) {
     // Allocate memory for the new node
-    struct Node* newNode = (struct Node*) malloc(sizeof(struct Node));
+    struct NodeMcr * newNode = (struct NodeMcr*) malloc(sizeof(struct NodeMcr));
     if (newNode == NULL) {
         printf("Memory allocation failed");
         exit(1);
@@ -70,11 +84,11 @@ error is_mcrEnd(char *line){
 /* function checks if it is a name of macro
  * the function receives string of line, list of macros , and string of code
  * if found name of macro, the string of code receive the code of the matching macro*/
-error is_name_of_mcr(char* line,List* mcrList,char* code){
+error is_name_of_mcr(char* line,ListMcr * mcrList,char* code){
     char* linecpy=(char *) malloc(sizeof (char )*LINE_MAX_LENGTH);
     char* word;
     int i;
-    Node * currentNode=mcrList->head;
+    NodeMcr * currentNode=mcrList->head;
     if (mcrList->count==0)
         return noMcr;
     else {
@@ -106,11 +120,11 @@ error preAssembler(FILE* fileSrc,char* fileName){
     line= (char *) malloc(sizeof (char)*LINE_MAX_LENGTH);
 
     /*Building a linked list of macros*/
-    List * mcrList = calloc(1,sizeof (List));
+    ListMcr * mcrList = calloc(1,sizeof (ListMcr));
     if(!mcrList){
         return noMemory;
     }
-    Node * newNode = (Node*) malloc(sizeof (Node));
+    NodeMcr * newNode = (NodeMcr *) malloc(sizeof (NodeMcr));
     if(!newNode){
         return noMemory;
     }
@@ -124,7 +138,7 @@ error preAssembler(FILE* fileSrc,char* fileName){
 
             /*checks name of macro */
             if(!is_name_of_mcr(linecpy,mcrList,code)){
-                Node * currentNode=mcrList->head;
+                NodeMcr * currentNode=mcrList->head;
                 linecpy= removeWhiteSpace(linecpy);
                 for(i=0;i< mcrList->count;i++){
                     if(!strcmp(linecpy,currentNode->data.name)) {
@@ -151,6 +165,8 @@ error preAssembler(FILE* fileSrc,char* fileName){
                 while ((is_mcrEnd(line))!= success){
 
                     codemcr = concatenateStrings(codemcr, line);
+                    free(codemcr);
+                    free(line);
                     getOneLine(&line,fileSrc);
                 }
                 newNode= createNode(name,codemcr);
@@ -171,13 +187,15 @@ error preAssembler(FILE* fileSrc,char* fileName){
     fputs(line, fpAm);
     fclose(fileSrc);
     fclose(fpAm);
+    clearList(mcrList,NULL);
+    free(line);
     return success;
 }
 
 
 char* concatenateStrings(char* str1, char* str2) {
-    size_t len1 = strlen(str1);
-    size_t len2 = strlen(str2);
+    int len1 = strlen(str1);
+    int len2 = strlen(str2);
     char* result = malloc(len1 + len2 + 2);
     if (result == NULL) {
         printf("Error: Out of memory.\n");

@@ -8,22 +8,22 @@ typedef struct Mcr {
     char *code;
 } Mcr;
 
-typedef struct Node {
+typedef struct NodeMcr {
     struct Mcr data;
-    struct Node *next;
-} Node;
+    struct NodeMcr *next;
+} NodeMcr;
 
-typedef struct List {
+typedef struct ListMcr {
     int count;
-    Node *head;
-} List;
+    NodeMcr *head;
+} ListMcr;
 
 char* concatenateStrings(char* str1, char* str2);
-void addToList(Node* newElement, List* list);
-struct Node* createNode(char * name, char* code);
+void addToList(NodeMcr * newElement, ListMcr* list);
+struct NodeMcr * createNode(char * name, char* code);
 error is_mcr_def( char* lineOut);
 error is_mcrEnd(char *line);
-error is_name_of_mcr(char* line,List* mcrList,char* code);
+error is_name_of_mcr(char* line,ListMcr * mcrList,char* code);
 error preAssembler(FILE* fileSrc,char* fileName);
 char* concatenateStrings(char* str1, char* str2);
 
