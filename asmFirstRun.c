@@ -189,6 +189,7 @@ error codeData(char *line, list *dataList, int *counter) {
             getToken(&line, &word, NULL);
     }
     free(word);
+    free(line);
     return success;
 }
 
@@ -203,8 +204,10 @@ error codeString(char *line, list *dataList, int *counter) {
             OGNode = OGNode->next;
     while (ch != '\0' && ch != '\"')
         ch = line[i++];
-    if (ch == '\0')
+    if (ch == '\0') {
+        free(line);
         return missingParentheses;
+    }
     ch = line[++i];
     while (ch != '\0' && ch != '\"') {
         newNode = (Node *) calloc(1, sizeof(Node));
@@ -478,7 +481,6 @@ error firstRun (char *path) {
                 codeCommand(line, &instructionList, commandCode, &IC);
                 break;
         }
-        free(line);
         free(label);
         free(word);
     }
