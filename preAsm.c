@@ -32,13 +32,13 @@ void addToList(NodeMcr * newElement, ListMcr * list){
 
 /* Function to create a new node*/
 struct NodeMcr * createNode(char * name, char* code) {
-    // Allocate memory for the new node
+    /* Allocate memory for the new node*/
     struct NodeMcr * newNode = (struct NodeMcr*) malloc(sizeof(struct NodeMcr));
     if (newNode == NULL) {
         printf("Memory allocation failed");
         exit(1);
     }
-    // Allocate memory for the string data and copy the input string to it
+    /* Allocate memory for the string data and copy the input string to it*/
     newNode->data.name = (char*) malloc((strlen(name) + 1) * sizeof(char));
     if (!newNode->data.name) {
         printf("Memory allocation failed");
@@ -112,9 +112,7 @@ error preAssembler(FILE* fileSrc,char* fileName){
     char *line,*name,*code="";
     int i;
     char *newFileName;
-    insertSuffix(fileName,&newFileName,".as");
-    openFile(&fileSrc,newFileName);
-    free(newFileName);
+    openFile(&fileSrc,fileName, ".as");
     insertSuffix(fileName,&newFileName,".am");
 
     line= (char *) malloc(sizeof (char)*LINE_MAX_LENGTH);

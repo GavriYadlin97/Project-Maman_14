@@ -18,11 +18,24 @@ char* removeWhiteSpace(char* str) {
     return result;
 }
 
+error checkAlloc (void *test) {
+    if (test)
+        return success;
+    perror("Memory allocation error");
+    exit(1);
+    return memoryAllocErr;
+}
+
 /* Function receives a pointer to a FILE pointer and a file path (string)
  * The function opens the file and alerts if any errors occurred
  * returns an error code represented as an error enum*/
-error openFile (FILE **filePointer, char *filePath) {
-    *filePointer = fopen(filePath, "r");
+error openFile (FILE **filePointer, char *filePath, char *suffix) {
+    char *path = malloc(strlen(filePath) + strlen(suffix) + 1);
+    checkAlloc(path);
+    strcpy(path, filePath);
+    strcat(path, suffix);
+    *filePointer = fopen(path, "r");
+    free(path);
     if (!*filePointer)
         return fileOpeningErr;
     return success;
@@ -89,14 +102,14 @@ error getToken(char **str, char **token, char *delim) {
     if ((chAfterTok = strpbrk(*str + i, delim))) {
         *(chAfterTok++) = '\0'; /*put '\0' then increase by one*/
         /*Prepare a place for the token, size of that ever is left in '*str' +1 */
-        *token = (char *) malloc(chAfterTok - (*str + i));
+        *token = (char *) calloc(chAfterTok - (*str + i), sizeof(char));
         if (!*token)
             return memoryAllocErr;
         /*Copy token*/
         memcpy(*token, *str + i, chAfterTok - (*str + i));
         /*Remove token from str by overwriting it*/
         memmove(*str, chAfterTok, strlen(chAfterTok) + 1);
-        *str = realloc(*str, strlen(*str) + 1); /*free unneeded space from "tail"*/
+        *str = (char *) realloc(*str, strlen(*str) + 1); /*free unneeded space from "tail"*/
         if (!(*str))
             return memoryAllocErr;
     } else  /*Leave str as is*/
@@ -144,7 +157,8 @@ error getOneLine(char **line_out, FILE * fp) {
             *line_out = buffer;
             return endOfFile;
         } else if (current == '\n') {
-            buffer[bytes_readen] = '\0';
+            buffer[bytes_readen] = '\n';
+            buffer[++bytes_readen] = '\0';
             *line_out = buffer;
             return success;
         } else {
