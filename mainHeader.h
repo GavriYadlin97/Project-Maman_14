@@ -40,6 +40,9 @@ typedef enum Error{
     missingClosingParentheses,
     missingParentheses,
     missingComma,
+    missingArg,
+    tooManyArg,
+    wrongArg,
 }error;
 
 /*Enum for opcodes */
@@ -69,7 +72,7 @@ typedef enum Opcode {
 
 
 /*Function header in main.c or funcLib.c only*/
-error openFile(FILE **filePointer, char *filePath);
+error openFile(FILE **filePointer, char *filePath, char *suffix);
 error createFile(FILE **filePointer, char *filePath);
 error closeFile(FILE *filePointer);
 error getToken(char **str, char **token, char *delim);
@@ -77,5 +80,7 @@ error getOneLine(char **line_out, FILE * fp);
 error insertSuffix(char *str,char **newStr,char *suffix);
 error removeComments(char **str);
 char* removeWhiteSpace(char* str);
+error checkAlloc (void *);
+
 
 #endif /*PROJECT_MAMAN_14_MAINHEADER_H*/

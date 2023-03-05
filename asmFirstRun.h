@@ -42,7 +42,7 @@ typedef struct List {
 error clearWhiteSpace(char **line);
 error firstRun (char *);
 void reverseSTR(char str[], int);
-error idArg(char *arg, addressMethod *AMarg);
+error idArg(char **arg, addressMethod *AMarg);
 struct Node* createNodeFirstRun(char * name, opcode opcode, int place, char* instructionCode);
 
-#endif //PROJECT_MAMAN_14_ASMFIRSTRUN_H
+#endif /*PROJECT_MAMAN_14_ASMFIRSTRUN_H*/
