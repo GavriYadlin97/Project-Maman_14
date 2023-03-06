@@ -2,6 +2,13 @@
 
 #include "mainHeader.h"
 
+
+void freeString(char** ptr){
+    if(*ptr){
+        free(*ptr);
+        *ptr=NULL;
+    }
+}
 /*remove white spaces from the beginning of the string
  * received pointer to string
  * return pointer to string*/
@@ -15,7 +22,8 @@ char* removeWhiteSpace(char* str) {
             break;
         }
     }
-    return result;
+    memmove(str,result, strlen(result)+1);
+    return str;
 }
 
 error checkAlloc (void *test) {
@@ -154,13 +162,17 @@ error getOneLine(char **line_out, FILE * fp) {
         if (current == EOF) {
             buffer[bytes_readen] = '\n';
             buffer[++bytes_readen] = '\0';
-            *line_out = buffer;
+            *line_out = strdup(buffer);
+            free(buffer);
             return endOfFile;
+
         } else if (current == '\n') {
             buffer[bytes_readen] = '\n';
             buffer[++bytes_readen] = '\0';
-            *line_out = buffer;
+            *line_out= strdup(buffer);
+            free(buffer);
             return success;
+
         } else {
             buffer[bytes_readen++] = current;
         }

@@ -59,13 +59,12 @@ struct NodeMcr * createNode(char * name, char* code) {
  * the function receives two pointers of string, line and copy of line*/
 error is_mcr_def( char* lineOut){
     char * word;
-    //strcpy(lineOut,line);
     getToken(&lineOut,&word," ");
     if(!strcmp(word,"mcr")){
         return success;
     }
     else{
-        free(lineOut);
+        //free(lineOut);
         return noMcr;
     }
 }
@@ -75,7 +74,7 @@ error is_mcr_def( char* lineOut){
 error is_mcrEnd(char *line){
     char* linecpy;
     linecpy= removeWhiteSpace(line);
-    if(!strcmp(linecpy,"endmcr")){
+    if(!strcmp(linecpy,"endmcr\n")){
         return success;
     }
     else return noMcr;
@@ -85,19 +84,16 @@ error is_mcrEnd(char *line){
  * the function receives string of line, list of macros , and string of code
  * if found name of macro, the string of code receive the code of the matching macro*/
 error is_name_of_mcr(char* line,ListMcr * mcrList,char* code){
-    char* linecpy=(char *) malloc(sizeof (char )*LINE_MAX_LENGTH);
     char* word;
     int i;
     NodeMcr * currentNode=mcrList->head;
     if (mcrList->count==0)
         return noMcr;
     else {
-        strcpy(linecpy,line);
-        word=removeWhiteSpace(linecpy);
+        word=removeWhiteSpace(line);
 
         for(i=0;i< mcrList->count;i++){
             if(!strcmp(word,currentNode->data.name)){
-                code= currentNode->data.code;
                 return success;
             }
             currentNode=currentNode->next;
@@ -109,7 +105,7 @@ error is_name_of_mcr(char* line,ListMcr * mcrList,char* code){
 
 error preAssembler(FILE* fileSrc,char* fileName){
     FILE *fpAm;
-    char *line,*name,*code="";
+    char *line,*name,*linecpy,*code="";
     int i;
     char *newFileName;
     openFile(&fileSrc,fileName, ".as");
@@ -131,7 +127,7 @@ error preAssembler(FILE* fileSrc,char* fileName){
     while (!feof(fileSrc)){
         if( (getOneLine(&line,fileSrc))== success)
         {
-            char* linecpy=(char *) malloc(sizeof (char)*LINE_MAX_LENGTH);
+            linecpy=(char *) malloc(sizeof (char)*LINE_MAX_LENGTH);
             strcpy(linecpy,line);
 
             /*checks name of macro */
@@ -144,49 +140,50 @@ error preAssembler(FILE* fileSrc,char* fileName){
                     }
                     currentNode = currentNode->next;
                 }
-
-                free(line);
-                code= strdup(currentNode->data.code);
-                fputs(code,fpAm);
+                fputs(currentNode->data.code,fpAm);
+                fflush(fpAm);
+                freeString(&line);
+                freeString(&linecpy);
+                linecpy=NULL;
                 continue;
             }
                 /*checks definition of macro "mcr"*/
             else if(!is_mcr_def(linecpy)){
                 name= malloc(sizeof (char )* strlen(linecpy)+1);
                 strcpy(name, linecpy);
-                free(line);
+                freeString(&line);
                 free(linecpy);
-
+                linecpy=NULL;
                 getOneLine(&line,fileSrc);
                 char * codemcr="";
+
                 /*copying code to the node of the list until "endmcr"*/
                 while ((is_mcrEnd(line))!= success){
-
                     codemcr = concatenateStrings(codemcr, line);
-                    free(codemcr);
-                    free(line);
                     getOneLine(&line,fileSrc);
                 }
                 newNode= createNode(name,codemcr);
                 addToList(newNode,mcrList);
+                codemcr=NULL;
+                freeString(&line);
             }
             else /*not macro definition or macro name*/
             {
-                fflush(fpAm);
                 fputs(line, fpAm);
-                fputs("\n",fpAm);
-
+                fflush(fpAm);
+                freeString(&line);
+                freeString(&linecpy);
             }
-
         }
+        else break;
     }
-    int len= strlen(line);
-    strncat(line,line,len);
-    fputs(line, fpAm);
     fclose(fileSrc);
     fclose(fpAm);
     clearList(mcrList,NULL);
-    free(line);
+    freeString(&line);
+    freeString(&linecpy);
+    freeString(&name);
+    free(mcrList);
     return success;
 }
 
@@ -203,6 +200,6 @@ char* concatenateStrings(char* str1, char* str2) {
     strcpy(result, str1);
     strcat(result,"\t\t");
     strcat(result, str2);
-    strcat(result,"\n");
+
     return result;
 }

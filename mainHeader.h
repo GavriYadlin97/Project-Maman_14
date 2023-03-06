@@ -80,6 +80,7 @@ error getOneLine(char **line_out, FILE * fp);
 error insertSuffix(char *str,char **newStr,char *suffix);
 error removeComments(char **str);
 char* removeWhiteSpace(char* str);
+void freeString(char** ptr);
 error checkAlloc (void *);
 
 
