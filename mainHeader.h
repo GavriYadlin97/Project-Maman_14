@@ -35,6 +35,7 @@ typedef enum Error{
     undefinedAddressing,
     labelExists,
     labelTooLong,
+    wrongDefLabel,
     meaninglessLabel,
     unknownArg,
     missingClosingParentheses,

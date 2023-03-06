@@ -55,6 +55,17 @@ error clearWhiteSpace(char **line) {
     return success;
 }
 
+error strIsAlpha(char* str){
+    int i;
+
+    for (i=0; str[i]!= '\0' ; i++) {
+        if(!isalnum(str[i])){
+            return wrongArg;
+        }
+    }
+    return success;
+}
+
 error idCommand(char *command, opcode *op) {
     if (!command)
         return emptyArg;
@@ -397,8 +408,18 @@ error printList (list *lst, Node **node) {
 }
 
 error codeLabel (opcode type, char* line ,char* label, list* labelList) {
+    error err;
     getToken(&line, &label, ",");
+    if(strlen(line)>LABEL_MAX_SIZE){
+        fprintf(stderr,"Error: The definition of the label %s is too long\n",line);
+        return labelTooLong;
+    }
     if (label == NULL) {
+        clearWhiteSpace(&line);
+        if(err=strIsAlpha(line)!=success){
+            fprintf(stderr, "Error: The definition of label %s is incorrect\n",line);
+            return wrongDefLabel;
+        }
         getToken(&line, &label, NULL);
         clearWhiteSpace(&label);
         if (line == NULL) {
@@ -407,14 +428,22 @@ error codeLabel (opcode type, char* line ,char* label, list* labelList) {
             if (!searchNode(labelList, label, node)) {
                 Node *newNode = createNodeFirstRun(label, type, -1, "");
                 addToList(labelList, &newNode);
-            } else {
+                return success;
+            } else if(line==NULL)
+            {
                 fprintf(stderr, "Error: The definition of label %s is already exists\n", node->data.name);
                 return labelExists;
             }
         }
-    } else
-        fprintf(stderr, "Error: definition of two labels at once\n");
-    return success;
+    }
+    else if(err=strIsAlpha(line)!= success){
+        fprintf(stderr, "Error: Definition of two labels at once\n");
+        return wrongDefLabel;
+    }
+    else {
+        fprintf(stderr, "Error: The definition of thr label %s is incorrect\n",line);
+        return wrongDefLabel;
+    }
 }
 
 error idArg(char **arg, addressMethod *amArg) {
@@ -468,14 +497,22 @@ error firstRun (char *path) {
                 codeString(line, &dataList, &DC);
                 break;
             case external:
+                if (!label) {
+                    errFlag = meaninglessLabel;
+                    free(label);
+                    label = NULL;
+                    errFlag= codeLabel(commandCode, line, label, &labelList);
+                } else
+                    errFlag= codeLabel(commandCode, line, label, &labelList);
+                break;
             case entry:
                 if (!label) {
                     errFlag = meaninglessLabel;
                     free(label);
                     label = NULL;
-                    codeLabel(commandCode, line, label, &labelList);
+                    errFlag= codeLabel(commandCode, line, label, &labelList);
                 } else
-                    codeLabel(commandCode, line, label, &labelList);
+                    errFlag= codeLabel(commandCode, line, label, &labelList);
                 break;
             default:
                 codeCommand(line, &instructionList, commandCode, &IC);
