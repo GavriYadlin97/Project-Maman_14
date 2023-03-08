@@ -119,7 +119,7 @@ error getToken(char **str, char **token, char *delim) {
         memcpy(*token, *str + i, chAfterTok - (*str + i));
         /*Remove token from str by overwriting it*/
         memmove(*str, chAfterTok, strlen(chAfterTok) + 1);
-        *str = (char *) realloc(*str, strlen(*str) + 1); /*free unneeded space from "tail"*/
+        *str = (char *) realloc(*str, sizeof(char )*(strlen(*str) + 1)); /*free unneeded space from "tail"*/
         if (!(*str))
             return memoryAllocErr;
     } else  /*Leave str as is*/

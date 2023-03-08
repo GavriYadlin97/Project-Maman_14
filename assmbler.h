@@ -45,7 +45,7 @@ void reverseSTR(char str[], int);
 error idArg(char **arg, addressMethod *AMarg);
 struct Node* createNodeFirstRun(char * name, opcode opcode, int place, char* instructionCode);
 error searchNode(list* list, char* name,Node* nodeOut);
-error secondRun(list* dataList, list* labelList, list* instructionList,char* fileName);
-error strIsAlphaDigit(char* str)
+error secondRun(list* dataList, list* labelList, list* instructionList,char* fileName,error errFlag);
+error strIsAlphaDigit(char* str);
 
 #endif /*PROJECT_MAMAN_14_ASMFIRSTRUN_H*/

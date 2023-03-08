@@ -1,5 +1,4 @@
 /* Created by Adi.s & Gavri.y 30/01/2023. */
-
 #include "mainHeader.h"
 #include "preAsm.h"
 
@@ -105,7 +104,7 @@ error is_name_of_mcr(char* line,ListMcr * mcrList,char* code){
 
 error preAssembler(FILE* fileSrc,char* fileName){
     FILE *fpAm;
-    char *line,*name,*linecpy,*code="";
+    char *line,*name=NULL,*linecpy,*code="";
     int i;
     char *newFileName;
     openFile(&fileSrc,fileName, ".as");

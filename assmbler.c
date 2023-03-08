@@ -59,7 +59,8 @@ error clearWhiteSpace(char **line) {
         } else
             i++;
     }
-    *line = (char *) realloc(*line, strlen(*line) + 1);
+    free(*line);
+    *line = (char *) realloc(*line,  sizeof(char )*(strlen(*line) + 1));
     if (!(*line))
         return memoryAllocErr;
     if (!strcmp(*line, "")) {
@@ -327,6 +328,7 @@ error codeCommand (char *line, list *instructionList, opcode command, int *count
         newNode = (Node *) calloc(1, sizeof(Node));
         checkAlloc(newNode);
         newNode->data.place = (*count)++;
+        clearWhiteSpace(&label);
         strcpy(newNode->data.name, label);
         addToList(instructionList, &newNode);
         am1 = prm1;
@@ -448,14 +450,18 @@ error codeLabel (opcode type, char* line ,char* label, list* labelList) {
 }
 
 error setLabelAddress ( list *lst, char* name,int *address) {
-    Node *relevantNode = NULL;
+    Node *relevantNode, *temp;
     searchNode(lst, name, relevantNode);
     if (!relevantNode) {
         relevantNode = calloc(1, sizeof(Node));
         strcpy(relevantNode->data.name, name);
         relevantNode->data.type = none;
+        temp=relevantNode;
+        addToList(lst,&relevantNode);
+        relevantNode=temp;
     }
     relevantNode->data.place = (*address)++;
+
 }
 
 error idArg(char **arg, addressMethod *amArg) {
@@ -503,11 +509,13 @@ error firstRun (char *path) {
                 errFlag = undefinedCommand;
                 break;
             case data:
-                setLabelAddress(&labelList, label, &DC);
+                if (label)
+                    setLabelAddress(&labelList, label, &DC);
                 codeData(line, &dataList, &DC);
                 break;
             case string:
-                setLabelAddress(&labelList, label, &DC);
+                if (label)
+                    setLabelAddress(&labelList, label, &DC);
                 codeString(line, &dataList, &DC);
                 break;
             case external:
@@ -521,7 +529,8 @@ error firstRun (char *path) {
                     errFlag = codeLabel(commandCode, line, label, &labelList);
                 break;
             default:
-                setLabelAddress(&labelList, label, &IC);
+                if (label)
+                    setLabelAddress(&labelList, label, &IC);
                 codeCommand(line, &instructionList, commandCode, &IC);
                 break;
         }
@@ -531,29 +540,34 @@ error firstRun (char *path) {
     closeFile(stream);
     printList(&instructionList, NULL);
     printList(&dataList, NULL);
+    secondRun(&dataList,&labelList,&instructionList,path,errFlag);
     clearList(&instructionList, NULL);
     clearList(&dataList, NULL);
     return success;
 }
 
-error secondRun(list* dataList, list* labelList, list* instructionList,char* fileName){
+error secondRun(list* dataList, list* labelList, list* instructionList,char* fileName, error errFlag){
     Node * currentNode= calloc(1,sizeof (Node));
     Node * nodeOut= calloc(1,sizeof (Node));
-    int i;
+    int i,cntEnt,cntExt=0;
     char * newFileName;
     FILE * fpObj,*fpEnt,*fpExt;
-    error errFlag=success;
     currentNode=instructionList->head;
-    for (i=0;i<=instructionList->count;i++){
+    for (i=0;i<instructionList->count;i++){
         /*If it's a label and it's not an encoded line*/
-        if(strcmp(currentNode->data.name,"")){
+        if(isalpha(currentNode->data.name[0])){
             if(searchNode(labelList, currentNode->data.name, nodeOut)==labelExists){
-                strcmp(currentNode->data.place, nodeOut->data.place);
-                currentNode= currentNode->next;
+                binaryOf(currentNode->data.InstructionCode,nodeOut->data.place,12);
+                if(nodeOut->data.type==external){
+                    strcpy(currentNode->data.InstructionCode+ARE_START,"./");
+                }
+                else{
+                    strcpy(currentNode->data.InstructionCode+ARE_START,"/.");
+                }
             }
             else
                 errFlag =missingLabel;
-            currentNode= currentNode->next;
+            currentNode=currentNode->next;
         }
         else
             currentNode= currentNode->next;
@@ -564,37 +578,59 @@ error secondRun(list* dataList, list* labelList, list* instructionList,char* fil
         fpObj = fopen(newFileName, "w");
         /*write the instruction codes into new file ".obj"*/
         currentNode = instructionList->head;
-        for (i = 0; i <= instructionList->count; i++) {
+        for (i = 0; i < instructionList->count; i++) {
             fputs(currentNode->data.InstructionCode, fpObj);
+            fputs("\n",fpObj);
             fflush(fpObj);
             currentNode = currentNode->next;
         }
+        fclose(fpObj);
 
         currentNode = dataList->head;
-        for (i = 0; i <= dataList->count; i++) {
+        for (i = 0; i < dataList->count; i++) {
             fputs(currentNode->data.InstructionCode, fpObj);
+            fputs("\n",fpObj);
             fflush(fpObj);
             currentNode = currentNode->next;
         }
 
-
-        insertSuffix(fileName, &newFileName, ".ent");
-        fpEnt = fopen(newFileName, "w");
-
-        insertSuffix(fileName, &newFileName, ".ext");
-        fpExt = fopen(newFileName, "w");
-
+        /*counts numbers of label entry and label extern*/
         currentNode = labelList->head;
-        for (i = 0; i <= labelList->count; i++) {
-            if (currentNode->data.type == entry) {
-                fputs(currentNode->data.InstructionCode, fpEnt);
-                fflush(fpEnt);
-                currentNode = currentNode->next;
-            } else if (currentNode->data.type == external) {
-                fputs(currentNode->data.InstructionCode, fpExt);
-                fflush(fpExt);
+        for (i = 0; i < labelList->count; i++){
+            if (currentNode->data.type == entry)
+                cntEnt++;
+            else if(currentNode->data.type == external)
+                cntExt++;
+            currentNode=currentNode->next;
+        }
+        /*there is entry*/
+        if(!cntEnt){
+            insertSuffix(fileName, &newFileName, ".ent");
+            fpEnt = fopen(newFileName, "w");
+            for (i = 0; i < labelList->count; i++) {
+                if (currentNode->data.type == entry) {
+                    fputs(currentNode->data.InstructionCode, fpEnt);
+                    fputs("\n", fpEnt);
+                    fflush(fpEnt);
+                }
                 currentNode = currentNode->next;
             }
+            fclose(fpEnt);
+        }
+        /*there is extern*/
+        if(!cntExt){
+            insertSuffix(fileName, &newFileName, ".ext");
+            fpExt = fopen(newFileName, "w");
+            currentNode = labelList->head;
+            for (i = 0; i < labelList->count; i++) {
+                if (currentNode->data.type == external) {
+                    fputs(currentNode->data.InstructionCode, fpExt);
+                    fputs("\n", fpExt);
+                    fflush(fpExt);
+                }
+                currentNode = currentNode->next;
+            }
+            fclose(fpExt);
         }
     }
 }
