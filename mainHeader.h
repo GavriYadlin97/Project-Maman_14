@@ -84,7 +84,7 @@ error removeComments(char **str);
 char* removeWhiteSpace(char* str);
 void freeString(char** ptr);
 error checkAlloc (void *);
-error strIsAlphaDigit(char* str);
+
 
 
 #endif /*PROJECT_MAMAN_14_MAINHEADER_H*/
