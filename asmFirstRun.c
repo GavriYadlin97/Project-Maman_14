@@ -400,14 +400,14 @@ error printList (list *lst, Node **node) {
 error codeLabel (opcode type, char* line ,char* label, list* labelList) {
     error err;
     getToken(&line, &label, ",");
-    if(strlen(line)>LABEL_MAX_SIZE){
-        fprintf(stderr,"Error: The definition of the label %s is too long\n",line);
+    if (strlen(line) > LABEL_MAX_SIZE) {
+        fprintf(stderr, "Error: The definition of the label %s is too long\n", line);
         return labelTooLong;
     }
     if (label == NULL) {
         clearWhiteSpace(&line);
-        if(err=strIsAlphaDigit(line)!=success){
-            fprintf(stderr, "Error: The definition of label %s is incorrect\n",line);
+        if (err = strIsAlphaDigit(line) != success) {
+            fprintf(stderr, "Error: The definition of label %s is incorrect\n", line);
             return wrongDefLabel;
         }
         getToken(&line, &label, NULL);
@@ -419,21 +419,29 @@ error codeLabel (opcode type, char* line ,char* label, list* labelList) {
                 Node *newNode = createNodeFirstRun(label, type, -1, "");
                 addToList(labelList, &newNode);
                 return success;
-            } else if(line==NULL)
-            {
+            } else if (line == NULL) {
                 fprintf(stderr, "Error: The definition of label %s is already exists\n", node->data.name);
                 return labelExists;
             }
         }
-    }
-    else if(err=strIsAlphaDigit(line)!= success){
+    } else if ((err = strIsAlphaDigit(line)) != success) {
         fprintf(stderr, "Error: Definition of two labels at once\n");
         return wrongDefLabel;
-    }
-    else {
-        fprintf(stderr, "Error: The definition of thr label %s is incorrect\n",line);
+    } else {
+        fprintf(stderr, "Error: The definition of thr label %s is incorrect\n", line);
         return wrongDefLabel;
     }
+}
+
+error setLabelAddress ( list *lst, char* name,int *address) {
+    Node *relevantNode = NULL;
+    searchNode(lst, name, relevantNode);
+    if (!relevantNode) {
+        relevantNode = calloc(1, sizeof(Node));
+        strcpy(relevantNode->data.name, name);
+        relevantNode->data.type = none;
+    }
+    relevantNode->data.place = (*address)++;
 }
 
 error idArg(char **arg, addressMethod *amArg) {
@@ -481,9 +489,11 @@ error firstRun (char *path) {
                 errFlag = undefinedCommand;
                 break;
             case data:
+                setLabelAddress(&labelList, label, &DC);
                 codeData(line, &dataList, &DC);
                 break;
             case string:
+                setLabelAddress(&labelList, label, &DC);
                 codeString(line, &dataList, &DC);
                 break;
             case external:
@@ -492,11 +502,12 @@ error firstRun (char *path) {
                     errFlag = meaninglessLabel;
                     free(label);
                     label = NULL;
-                    errFlag= codeLabel(commandCode, line, label, &labelList);
+                    errFlag = codeLabel(commandCode, line, label, &labelList);
                 } else
-                    errFlag= codeLabel(commandCode, line, label, &labelList);
+                    errFlag = codeLabel(commandCode, line, label, &labelList);
                 break;
             default:
+                setLabelAddress(&labelList, label, &IC);
                 codeCommand(line, &instructionList, commandCode, &IC);
                 break;
         }
