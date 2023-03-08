@@ -55,16 +55,6 @@ error clearWhiteSpace(char **line) {
     return success;
 }
 
-error strIsAlpha(char* str){
-    int i;
-
-    for (i=0; str[i]!= '\0' ; i++) {
-        if(!isalnum(str[i])){
-            return wrongArg;
-        }
-    }
-    return success;
-}
 
 error idCommand(char *command, opcode *op) {
     if (!command)
@@ -145,7 +135,7 @@ static error addToList(list *lst, Node **nodeToAdd) {
 /*search node by name
  * checks only if the names are the same
  * received pointer to list and name (char*)*/
-static error searchNode(list* list, char* name,Node* nodeOut) {
+error searchNode(list* list, char* name,Node* nodeOut) {
     Node *currentNode = list->head;
     int i;
     if (list->count == 0)
@@ -416,7 +406,7 @@ error codeLabel (opcode type, char* line ,char* label, list* labelList) {
     }
     if (label == NULL) {
         clearWhiteSpace(&line);
-        if(err=strIsAlpha(line)!=success){
+        if(err=strIsAlphaDigit(line)!=success){
             fprintf(stderr, "Error: The definition of label %s is incorrect\n",line);
             return wrongDefLabel;
         }
@@ -436,7 +426,7 @@ error codeLabel (opcode type, char* line ,char* label, list* labelList) {
             }
         }
     }
-    else if(err=strIsAlpha(line)!= success){
+    else if(err=strIsAlphaDigit(line)!= success){
         fprintf(stderr, "Error: Definition of two labels at once\n");
         return wrongDefLabel;
     }
@@ -497,14 +487,6 @@ error firstRun (char *path) {
                 codeString(line, &dataList, &DC);
                 break;
             case external:
-                if (!label) {
-                    errFlag = meaninglessLabel;
-                    free(label);
-                    label = NULL;
-                    errFlag= codeLabel(commandCode, line, label, &labelList);
-                } else
-                    errFlag= codeLabel(commandCode, line, label, &labelList);
-                break;
             case entry:
                 if (!label) {
                     errFlag = meaninglessLabel;

@@ -44,5 +44,6 @@ error firstRun (char *);
 void reverseSTR(char str[], int);
 error idArg(char **arg, addressMethod *AMarg);
 struct Node* createNodeFirstRun(char * name, opcode opcode, int place, char* instructionCode);
+error searchNode(list* list, char* name,Node* nodeOut);
 
 #endif /*PROJECT_MAMAN_14_ASMFIRSTRUN_H*/
