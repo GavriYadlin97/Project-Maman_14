@@ -59,8 +59,7 @@ error clearWhiteSpace(char **line) {
         } else
             i++;
     }
-    free(*line);
-    *line = (char *) realloc(*line,  sizeof(char )*(strlen(*line) + 1));
+    *line = (char *) realloc(*line, sizeof(char) * (strlen(*line) + 1));
     if (!(*line))
         return memoryAllocErr;
     if (!strcmp(*line, "")) {
@@ -150,7 +149,7 @@ static error addToList(list *lst, Node **nodeToAdd) {
 /*search node by name
  * checks only if the names are the same
  * received pointer to list and name (char*)*/
-error searchNode(list* list, char* name,Node* nodeOut) {
+error searchNode(list* list, char* name,Node **nodeOut) {
     Node *currentNode = list->head;
     int i;
     if (list->count == 0)
@@ -158,7 +157,7 @@ error searchNode(list* list, char* name,Node* nodeOut) {
     else {
         for (i = 0; i < list->count; i++) {
             if (!strcmp(name, currentNode->data.name)) {
-                *nodeOut = *currentNode;
+                *nodeOut = currentNode;
                 return labelExists;
             }
             currentNode = currentNode->next;
@@ -180,14 +179,14 @@ static error clearList (list *lst, Node **node) {
 }
 
 error codeData(char *line, list *dataList, int *counter) {
-    char *word, *endPTR;
-    int num;
-    Node *newNode;
+    char *word = NULL, *endPTR = NULL;
+    int num = 0;
+    Node *newNode = NULL;
     getToken(&line, &word, ",");
     if (!word)
         getToken(&line, &word, NULL);
     while (word) {
-        num = (int)strlen(word);
+        num = (int) strlen(word);
         clearWhiteSpace(&word);
         if (num != strlen(word) && line)
             return missingComma;
@@ -316,12 +315,12 @@ error codeCommand (char *line, list *instructionList, opcode command, int *count
         default:
             break;
     }
-    binaryOf(newNode->data.InstructionCode + PRM_1_START, prm1, 2);
-    binaryOf(newNode->data.InstructionCode + PRM_2_START, prm2, 2);
-    binaryOf(newNode->data.InstructionCode + OPCODE_START, command, 4);
-    binaryOf(newNode->data.InstructionCode + SRC_AM_START, am1, 2);
-    binaryOf(newNode->data.InstructionCode + DEST_AM_START, am2, 2);
-    binaryOf(newNode->data.InstructionCode + ARE_START, 0, 2);
+    binaryOf(newNode->data.InstructionCode + PRM_1_START, prm1, PRM_SIZE);
+    binaryOf(newNode->data.InstructionCode + PRM_2_START, prm2, PRM_SIZE);
+    binaryOf(newNode->data.InstructionCode + OPCODE_START, command, OPCODE_SIZE);
+    binaryOf(newNode->data.InstructionCode + SRC_AM_START, am1, AM_SIZE);
+    binaryOf(newNode->data.InstructionCode + DEST_AM_START, am2, AM_SIZE);
+    binaryOf(newNode->data.InstructionCode + ARE_START, ARE_Immediate, ARE_SIZE);
     newNode->data.place = (*count)++;
     addToList(instructionList, &newNode);
     if (label) {
@@ -343,14 +342,14 @@ error codeCommand (char *line, list *instructionList, opcode command, int *count
                 argVal = strtol(arg1 + 1, &endPTR, 10);
                 if (strcmp(endPTR, ""))
                     return unknownArg;
-                binaryOf(newNode->data.InstructionCode, argVal, 12);
-                binaryOf(newNode->data.InstructionCode + ARE_START, 0, 2);
+                binaryOf(newNode->data.InstructionCode, argVal, IMMEDIATE_SIZE);
+                binaryOf(newNode->data.InstructionCode + ARE_START, ARE_Immediate, ARE_SIZE);
                 addToList(instructionList, &newNode);
                 break;
             case directRegister:
-                binaryOf(newNode->data.InstructionCode + REGI_1_START, arg1[1] - '0', 6);
-                binaryOf(newNode->data.InstructionCode + REGI_2_START, 0, 6);
-                binaryOf(newNode->data.InstructionCode + ARE_START, 0, 2);
+                binaryOf(newNode->data.InstructionCode + REGI_1_START, arg1[1] - '0', REGI_SIZE);
+                binaryOf(newNode->data.InstructionCode + REGI_2_START, 0, REGI_SIZE);
+                binaryOf(newNode->data.InstructionCode + ARE_START, ARE_Immediate, ARE_SIZE);
                 if (am2 != directRegister)
                     addToList(instructionList, &newNode);
                 break;
@@ -370,17 +369,17 @@ error codeCommand (char *line, list *instructionList, opcode command, int *count
                 if (strcmp(endPTR, ""))
                     return unknownArg;
                 binaryOf(newNode->data.InstructionCode, argVal, 12);
-                binaryOf(newNode->data.InstructionCode + ARE_START, 0, 2);
+                binaryOf(newNode->data.InstructionCode + ARE_START, ARE_Immediate, 2);
                 break;
             case directRegister:
                 if (!newNode) {
                     newNode = (Node *) calloc(1, sizeof(Node));
                     checkAlloc(newNode);
                     newNode->data.place = (*count)++;
-                    binaryOf(newNode->data.InstructionCode + REGI_1_START, 0, 6);
+                    binaryOf(newNode->data.InstructionCode + REGI_1_START, 0, REGI_SIZE);
                 }
-                binaryOf(newNode->data.InstructionCode + REGI_2_START, arg2[1] - '0', 6);
-                binaryOf(newNode->data.InstructionCode + ARE_START, 0, 2);
+                binaryOf(newNode->data.InstructionCode + REGI_2_START, arg2[1] - '0', REGI_SIZE);
+                binaryOf(newNode->data.InstructionCode + ARE_START, ARE_Immediate, ARE_SIZE);
                 break;
             default:
                 newNode = (Node *) calloc(1, sizeof(Node));
@@ -431,7 +430,7 @@ error codeLabel (opcode type, char* line ,char* label, list* labelList) {
         if (line == NULL) {
             Node *node = calloc(1, sizeof(Node));
             checkAlloc(node);
-            if (!searchNode(labelList, label, node)) {
+            if (!searchNode(labelList, label, &node)) {
                 Node *newNode = createNodeFirstRun(label, type, -1, "");
                 addToList(labelList, &newNode);
                 return success;
@@ -451,17 +450,16 @@ error codeLabel (opcode type, char* line ,char* label, list* labelList) {
 
 error setLabelAddress ( list *lst, char* name,int *address) {
     Node *relevantNode, *temp;
-    searchNode(lst, name, relevantNode);
-    if (!relevantNode) {
-        relevantNode = calloc(1, sizeof(Node));
+    if (searchNode(lst, name, &relevantNode) != labelExists) {
+        relevantNode = (Node *) calloc(1, sizeof(Node));
+        checkAlloc(relevantNode);
         strcpy(relevantNode->data.name, name);
         relevantNode->data.type = none;
-        temp=relevantNode;
-        addToList(lst,&relevantNode);
-        relevantNode=temp;
+        temp = relevantNode;
+        addToList(lst, &relevantNode);
+        relevantNode = temp;
     }
     relevantNode->data.place = (*address)++;
-
 }
 
 error idArg(char **arg, addressMethod *amArg) {
@@ -483,7 +481,7 @@ error idArg(char **arg, addressMethod *amArg) {
 
 error firstRun (char *path) {
     error errFlag;
-    opcode commandCode;
+    opcode commandOP;
     list dataList = {0};
     list labelList = {0};
     list instructionList = {0};
@@ -503,19 +501,18 @@ error firstRun (char *path) {
             free(word);
             continue;
         }
-        idCommand(word, &commandCode); /*Identify the command and assign an enum value */
-        switch (commandCode) {
+        idCommand(word, &commandOP); /*Identify the command and assign an enum value */
+        if (label && (commandOP == data || commandOP == string))
+            setLabelAddress(&labelList, label, &DC);
+        switch (commandOP) {
             case none:
                 errFlag = undefinedCommand;
+                free(line);
                 break;
             case data:
-                if (label)
-                    setLabelAddress(&labelList, label, &DC);
                 codeData(line, &dataList, &DC);
                 break;
             case string:
-                if (label)
-                    setLabelAddress(&labelList, label, &DC);
                 codeString(line, &dataList, &DC);
                 break;
             case external:
@@ -524,14 +521,14 @@ error firstRun (char *path) {
                     errFlag = meaninglessLabel;
                     free(label);
                     label = NULL;
-                    errFlag = codeLabel(commandCode, line, label, &labelList);
+                    errFlag = codeLabel(commandOP, line, label, &labelList);
                 } else
-                    errFlag = codeLabel(commandCode, line, label, &labelList);
+                    errFlag = codeLabel(commandOP, line, label, &labelList);
                 break;
             default:
                 if (label)
                     setLabelAddress(&labelList, label, &IC);
-                codeCommand(line, &instructionList, commandCode, &IC);
+                codeCommand(line, &instructionList, commandOP, &IC);
                 break;
         }
         free(label);
@@ -540,8 +537,9 @@ error firstRun (char *path) {
     closeFile(stream);
     printList(&instructionList, NULL);
     printList(&dataList, NULL);
-    secondRun(&dataList,&labelList,&instructionList,path,errFlag);
+    secondRun(&dataList, &labelList, &instructionList, path, errFlag);
     clearList(&instructionList, NULL);
+    clearList(&labelList, NULL);
     clearList(&dataList, NULL);
     return success;
 }
@@ -553,24 +551,21 @@ error secondRun(list* dataList, list* labelList, list* instructionList,char* fil
     char * newFileName;
     FILE * fpObj,*fpEnt,*fpExt;
     currentNode=instructionList->head;
-    for (i=0;i<instructionList->count;i++){
+    for (i=0;i<instructionList->count;i++) {
         /*If it's a label and it's not an encoded line*/
-        if(isalpha(currentNode->data.name[0])){
-            if(searchNode(labelList, currentNode->data.name, nodeOut)==labelExists){
-                binaryOf(currentNode->data.InstructionCode,nodeOut->data.place,12);
-                if(nodeOut->data.type==external){
-                    strcpy(currentNode->data.InstructionCode+ARE_START,"./");
+        if (isalpha(currentNode->data.name[0])) {
+            if (searchNode(labelList, currentNode->data.name, &nodeOut) == labelExists) {
+                binaryOf(currentNode->data.InstructionCode, nodeOut->data.place, ADDRESS_SIZE);
+                if (nodeOut->data.type == external) {
+                    strcpy(currentNode->data.InstructionCode + ARE_START, "./");
+                } else {
+                    strcpy(currentNode->data.InstructionCode + ARE_START, "/.");
                 }
-                else{
-                    strcpy(currentNode->data.InstructionCode+ARE_START,"/.");
-                }
-            }
-            else
-                errFlag =missingLabel;
-            currentNode=currentNode->next;
-        }
-        else
-            currentNode= currentNode->next;
+            } else
+                errFlag = missingLabel;
+            currentNode = currentNode->next;
+        } else
+            currentNode = currentNode->next;
     }
     /*There were no errors*/
     if(errFlag==success) {
@@ -580,7 +575,7 @@ error secondRun(list* dataList, list* labelList, list* instructionList,char* fil
         currentNode = instructionList->head;
         for (i = 0; i < instructionList->count; i++) {
             fputs(currentNode->data.InstructionCode, fpObj);
-            fputs("\n",fpObj);
+            fputs("\n", fpObj);
             fflush(fpObj);
             currentNode = currentNode->next;
         }
@@ -589,22 +584,22 @@ error secondRun(list* dataList, list* labelList, list* instructionList,char* fil
         currentNode = dataList->head;
         for (i = 0; i < dataList->count; i++) {
             fputs(currentNode->data.InstructionCode, fpObj);
-            fputs("\n",fpObj);
+            fputs("\n", fpObj);
             fflush(fpObj);
             currentNode = currentNode->next;
         }
 
         /*counts numbers of label entry and label extern*/
         currentNode = labelList->head;
-        for (i = 0; i < labelList->count; i++){
+        for (i = 0; i < labelList->count; i++) {
             if (currentNode->data.type == entry)
                 cntEnt++;
-            else if(currentNode->data.type == external)
+            else if (currentNode->data.type == external)
                 cntExt++;
-            currentNode=currentNode->next;
+            currentNode = currentNode->next;
         }
         /*there is entry*/
-        if(!cntEnt){
+        if (!cntEnt) {
             insertSuffix(fileName, &newFileName, ".ent");
             fpEnt = fopen(newFileName, "w");
             for (i = 0; i < labelList->count; i++) {
@@ -618,7 +613,7 @@ error secondRun(list* dataList, list* labelList, list* instructionList,char* fil
             fclose(fpEnt);
         }
         /*there is extern*/
-        if(!cntExt){
+        if (!cntExt) {
             insertSuffix(fileName, &newFileName, ".ext");
             fpExt = fopen(newFileName, "w");
             currentNode = labelList->head;

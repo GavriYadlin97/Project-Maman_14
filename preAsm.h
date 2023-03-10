@@ -28,4 +28,4 @@ error is_name_of_mcr(char* line,ListMcr * mcrList,char* code);
 
 
 
-#endif //PROJECT_MAMAN_14_PREASM_H
+#endif /*PROJECT_MAMAN_14_PREASM_H*/

@@ -19,7 +19,6 @@
 #define TABLE_SIZE 100
 #define WORD 15
 #define LABEL_MAX_SIZE 31
-#define SUFFIX_LENGTH 5
 
 /*Enum for various error handling*/
 typedef enum Error{
@@ -44,7 +43,7 @@ typedef enum Error{
     missingArg,
     tooManyArg,
     wrongArg,
-    missingLabel,
+    missingLabel
 }error;
 
 /*Enum for opcodes */
@@ -69,7 +68,7 @@ typedef enum Opcode {
     string,
     entry,
     external,
-    none,
+    none
 } opcode;
 
 
