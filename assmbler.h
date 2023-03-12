@@ -16,6 +16,7 @@
 #define DEST_AM_START 10
 #define ARE_START 12
 
+#define REGI_NAME_SIZE 2
 #define ARE_SIZE 2
 #define PRM_SIZE 2
 #define OPCODE_SIZE 4

@@ -49,9 +49,9 @@ error strIsAlphaDigit(char* str){
 /* function takes a pointer to a string (char*) which is dynamically allocated, and five unallocated pointers to string (char*)
  * function divides the given string to Label, command and two arguments (depending on each existence) */
 error clearWhiteSpace(char **line) {
+    int i = 0;
     if (!line || !(*line))
         return emptyArg;
-    int i = 0;
     while ((*line)[i] != '\0') {
         if (isspace((*line)[i])) {
             (*line)[i] = '\0';
@@ -60,8 +60,7 @@ error clearWhiteSpace(char **line) {
             i++;
     }
     *line = (char *) realloc(*line, sizeof(char) * (strlen(*line) + 1));
-    if (!(*line))
-        return memoryAllocErr;
+    checkAlloc(*line);
     if (!strcmp(*line, "")) {
         free(*line);
         *line = NULL;
@@ -134,8 +133,8 @@ struct Node* createNodeFirstRun(char * name, opcode opcode, int place, char* ins
 }
 
 static error addToList(list *lst, Node **nodeToAdd) {
-    (*nodeToAdd)->next = NULL;
     Node *ptr = lst->head;
+    (*nodeToAdd)->next = NULL;
     if (ptr) {
         while (ptr->next)
             ptr = ptr->next;
@@ -421,7 +420,7 @@ error codeLabel (opcode type, char* line ,char* label, list* labelList) {
     }
     if (label == NULL) {
         clearWhiteSpace(&line);
-        if (err = strIsAlphaDigit(line) != success) {
+        if ((err = strIsAlphaDigit(line)) != success) {
             fprintf(stderr, "Error: The definition of label %s is incorrect\n", line);
             return wrongDefLabel;
         }
@@ -446,6 +445,7 @@ error codeLabel (opcode type, char* line ,char* label, list* labelList) {
         fprintf(stderr, "Error: The definition of thr label %s is incorrect\n", line);
         return wrongDefLabel;
     }
+    return success;
 }
 
 error setLabelAddress ( list *lst, char* name,int *address) {
@@ -460,6 +460,7 @@ error setLabelAddress ( list *lst, char* name,int *address) {
         relevantNode = temp;
     }
     relevantNode->data.place = (*address)++;
+    return success;
 }
 
 error idArg(char **arg, addressMethod *amArg) {
@@ -471,7 +472,7 @@ error idArg(char **arg, addressMethod *amArg) {
     if ((*arg)[0] == '#') {
         *amArg = immediate;
         return success;
-    } else if (strlen(*arg) == 2 && (*arg)[0] == 'r' && '0' <= (*arg)[1] && (*arg)[1] <= '7') {
+    } else if (strlen(*arg) == REGI_NAME_SIZE && (*arg)[0] == 'r' && '0' <= (*arg)[1] && (*arg)[1] <= '7') {
         *amArg = directRegister;
         return success;
     } else
@@ -544,14 +545,14 @@ error firstRun (char *path) {
     return success;
 }
 
-error secondRun(list* dataList, list* labelList, list* instructionList,char* fileName, error errFlag){
-    Node * currentNode= calloc(1,sizeof (Node));
-    Node * nodeOut= calloc(1,sizeof (Node));
-    int i,cntEnt,cntExt=0;
-    char * newFileName;
-    FILE * fpObj,*fpEnt,*fpExt;
-    currentNode=instructionList->head;
-    for (i=0;i<instructionList->count;i++) {
+error secondRun(list* dataList, list* labelList, list* instructionList,char* fileName, error errFlag) {
+    Node *currentNode = calloc(1, sizeof(Node));
+    Node *nodeOut = calloc(1, sizeof(Node));
+    int i, cntEnt, cntExt = 0;
+    char *newFileName;
+    FILE *fpObj, *fpEnt, *fpExt;
+    currentNode = instructionList->head;
+    for (i = 0; i < instructionList->count; i++) {
         /*If it's a label and it's not an encoded line*/
         if (isalpha(currentNode->data.name[0])) {
             if (searchNode(labelList, currentNode->data.name, &nodeOut) == labelExists) {
@@ -568,7 +569,7 @@ error secondRun(list* dataList, list* labelList, list* instructionList,char* fil
             currentNode = currentNode->next;
     }
     /*There were no errors*/
-    if(errFlag==success) {
+    if (errFlag == success) {
         insertSuffix(fileName, &newFileName, ".obj");
         fpObj = fopen(newFileName, "w");
         /*write the instruction codes into new file ".obj"*/
