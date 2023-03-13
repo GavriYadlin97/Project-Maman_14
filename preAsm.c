@@ -176,6 +176,8 @@ error preAssembler(FILE* fileSrc,char* fileName){
         }
         else break;
     }
+    fputs(line, fpAm);
+    fflush(fpAm);
     fclose(fileSrc);
     fclose(fpAm);
     clearList(mcrList,NULL);
