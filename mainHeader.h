@@ -71,18 +71,18 @@ typedef enum Opcode {
     none
 } opcode;
 
-
 /*Function header in main.c or funcLib.c only*/
 error openFile(FILE **filePointer, char *filePath, char *suffix);
-error createFile(FILE **filePointer, char *filePath);
+error createFile(FILE **filePointer, char *filePath, char *suffix);
 error closeFile(FILE *filePointer);
 error getToken(char **str, char **token, char *delim);
-error getOneLine(char **line_out, FILE * fp);
-error insertSuffix(char *str,char **newStr,char *suffix);
+error getOneLine(char **line_out, FILE *fp);
+error insertSuffix(char *str, char **newStr, char *suffix);
 error removeComments(char **str);
-char* removeWhiteSpace(char* str);
-void freeString(char** ptr);
-void checkAlloc (void *);
+char *removeWhiteSpace(char *str);
+void freeString(char **ptr);
+void checkAlloc(void *);
+
 
 
 

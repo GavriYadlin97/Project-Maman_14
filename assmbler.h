@@ -24,12 +24,13 @@
 #define REGI_SIZE 6
 #define ADDRESS_SIZE 12
 #define IMMEDIATE_SIZE 12
+#define DATA_SIZE 14
 
 typedef enum AreType {
     ARE_Immediate = 0,
     ARE_external = 1,
     ARE_relocate = 2
-}AreType;
+} AreType;
 
 typedef enum AddressMethod {
     immediate = 0,
@@ -39,7 +40,7 @@ typedef enum AddressMethod {
 } addressMethod;
 
 typedef struct Code {
-    char name [LABEL_MAX_SIZE];
+    char name[LABEL_MAX_SIZE];
     opcode type;
     int place;
     char InstructionCode[WORD];
@@ -54,19 +55,12 @@ typedef struct List {
 } list;
 
 error firstRun(char *);
-
 error strIsAlphaDigit(char *str);
-
 void reverseSTR(char str[], int);
-
 error clearWhiteSpace(char **line);
-
 error idArg(char **arg, addressMethod *AMarg);
-
 error searchNode(list *list, char *name, Node **nodeOut);
-
 struct Node *createNodeFirstRun(char *name, opcode opcode, int place, char *instructionCode);
-
 error secondRun(list *dataList, list *labelList, list *instructionList, char *fileName, error errFlag);
 
 #endif /*PROJECT_MAMAN_14_ASMFIRSTRUN_H*/

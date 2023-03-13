@@ -2,13 +2,13 @@
 
 #include "mainHeader.h"
 
-
 void freeString(char** ptr){
     if(*ptr){
         free(*ptr);
         *ptr=NULL;
     }
 }
+
 /*remove white spaces from the beginning of the string
  * received pointer to string
  * return pointer to string*/
@@ -32,8 +32,6 @@ void checkAlloc (void *test) {
     }
 }
 
-
-
 /* Function receives a pointer to a FILE pointer and a file path (string)
  * The function opens the file and alerts if any errors occurred
  * returns an error code represented as an error enum*/
@@ -50,8 +48,13 @@ error openFile (FILE **filePointer, char *filePath, char *suffix) {
 /* Function receives a pointer to a FILE pointer and a file path (string)
  * The function creates the file and alerts if any errors occurred
  * returns an error code represented as an error enum*/
-error createFile (FILE **filePointer, char *filePath) {
-    *filePointer = fopen(filePath, "w");
+error createFile (FILE **filePointer, char *filePath, char *suffix) {
+    char *path = (char *) malloc(strlen(filePath) + strlen(suffix) + 1);
+    checkAlloc(path);
+    strcpy(path, filePath);
+    strcat(path, suffix);
+    *filePointer = fopen(path, "w");
+    free(path);
     return ((!*filePointer) ? fileOpeningErr : success);
 }
 
