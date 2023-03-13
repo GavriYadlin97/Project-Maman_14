@@ -569,17 +569,19 @@ error secondRun(list* dataList, list* labelList, list* instructionList,char* fil
         /*If it's a label and it's not an encoded line*/
         if (isalpha(currentNode->data.name[0])) {
             if (searchNode(labelList, currentNode->data.name, &nodeOut) == labelExists) {
-                //nodeOut->data.place=currentNode->data.place;
-                binaryOf(currentNode->data.InstructionCode, nodeOut->data.place, ADDRESS_SIZE);
+                nodeOut->data.place=currentNode->data.place;
 
                 if (nodeOut->data.type == external) {
                     cntExt++;
+                    binaryOf(currentNode->data.InstructionCode, 0, ADDRESS_SIZE);
                     strcpy(currentNode->data.InstructionCode + ARE_START, "./");
                 } else if (nodeOut->data.type == entry) {
                     cntEnt++;
+                    binaryOf(currentNode->data.InstructionCode, nodeOut->data.place, ADDRESS_SIZE);
                     strcpy(currentNode->data.InstructionCode + ARE_START, "/.");
                 }
                 else{
+                    binaryOf(currentNode->data.InstructionCode, nodeOut->data.place, ADDRESS_SIZE);
                     strcpy(currentNode->data.InstructionCode + ARE_START, "/.");
                 }
             } else {
@@ -634,14 +636,17 @@ error secondRun(list* dataList, list* labelList, list* instructionList,char* fil
         if (cntExt) {
             insertSuffix(fileName, &newFileName, ".ext");
             fpExt = fopen(newFileName, "w");
-            currentNode = labelList->head;
-            for (i = 0; i < labelList->count; i++) {
-                if (currentNode->data.type == external) {
-                    fputs(currentNode->data.name, fpExt);
-                    fputs("\t", fpExt);
-                    fprintf(fpExt, "%d" , currentNode->data.place);
-                    fputs("\n", fpExt);
-                    fflush(fpExt);
+            currentNode = instructionList->head;
+            for (i = 0; i < instructionList->count; i++) {
+                if (isalpha(currentNode->data.name[0])) {
+                    searchNode(labelList,currentNode->data.name,&nodeOut);
+                    if(nodeOut->data.type==external){
+                        fputs(currentNode->data.name, fpExt);
+                        fputs("\t", fpExt);
+                        fprintf(fpExt, "%d" , currentNode->data.place);
+                        fputs("\n", fpExt);
+                        fflush(fpExt);
+                    }
                 }
                 currentNode = currentNode->next;
             }
