@@ -63,7 +63,7 @@ error is_mcr_def( char* lineOut){
         return success;
     }
     else{
-        //free(lineOut);
+        /*free(lineOut);*/
         return noMcr;
     }
 }
