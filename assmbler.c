@@ -261,8 +261,9 @@ error codeCommand (char *line, list *instructionList, opcode command, int *count
             getToken(&line, &label, "(");
             am1 = 0;
             if (!label) {
-                getToken(&line, &label, NULL);
-                arg1 = arg2 = NULL;
+                getToken(&line, &arg2, NULL);
+                idArg(&arg2, &am2);
+                arg1 = NULL;
             } else {
                 getToken(&line, &arg1, ",");
                 idArg(&arg1, &prm1);
@@ -525,7 +526,7 @@ error idArg(char **arg, addressMethod *amArg) {
 error firstRun (char *path) {
     Node *node;
     FILE *stream;
-    error errFlag;
+    error errFlag=success;
     opcode commandOP;
     list dataList = {0};
     list labelList = {0};
@@ -621,9 +622,8 @@ error secondRun(list* dataList, list* labelList, list* instructionList,char* fil
                 errFlag = missingLabel;
                 fprintf(stderr, "missing label %s \n", currentNode->data.name);
             }
-            currentNode = currentNode->next;
-        } else
-            currentNode = currentNode->next;
+        }
+        currentNode = currentNode->next;
     }
     /*There were no errors*/
     if (errFlag == success) {
