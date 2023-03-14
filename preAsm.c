@@ -102,27 +102,22 @@ error is_name_of_mcr(char* line,ListMcr * mcrList,char* code){
 }
 
 
-error preAssembler(FILE* fileSrc,char* fileName){
-    FILE *fpAm;
+error preAssembler(char* fileName){
+    FILE *fpAm, *fileSrc;
     char *line,*name=NULL,*linecpy,*code="";
     int i;
     char *newFileName;
-    openFile(&fileSrc,fileName, ".as");
-    insertSuffix(fileName,&newFileName,".am");
 
     line= (char *) malloc(sizeof (char)*LINE_MAX_LENGTH);
 
     /*Building a linked list of macros*/
     ListMcr * mcrList = calloc(1,sizeof (ListMcr));
-    if(!mcrList){
-        return noMemory;
-    }
+    checkAlloc(mcrList);
     NodeMcr * newNode = (NodeMcr *) malloc(sizeof (NodeMcr));
-    if(!newNode){
-        return noMemory;
-    }
+    checkAlloc(newNode);
 
-    fpAm= fopen(newFileName,"w+");
+    openFile(&fileSrc,fileName, ".as");
+    createFile(&fpAm,fileName,".am");
     while (!feof(fileSrc)){
         if( (getOneLine(&line,fileSrc))== success)
         {

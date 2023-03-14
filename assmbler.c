@@ -133,6 +133,26 @@ struct Node* createNodeFirstRun(char * name, opcode opcode, int place, char* ins
     return newNode;
 }
 
+static error idLabel (char* arg) {
+    if (strlen(arg) >= LABEL_MAX_SIZE) {
+        fprintf(stderr, "\tLabel too long\n");
+        return unknownArg;
+    }
+    if (strpbrk(arg, " \t") != NULL) {
+        fprintf(stderr, "\tLabel cannot contain white spaces\n");
+        return unknownArg;
+    }
+    if (!isalpha(arg[0])) {
+        fprintf(stderr, "\tLabel must start with latter\n");
+        return unknownArg;
+    }
+    if(strchr(arg,',')) {
+        fprintf(stderr, "\tLabel or arg cannot contain \',\',\n");
+        return unknownArg;
+    }
+    return success;
+}
+
 static error addToList(list *lst, Node **nodeToAdd) {
     (*nodeToAdd)->next = NULL;
     Node *ptr = lst->head;
@@ -181,19 +201,27 @@ static error clearList (list *lst, Node **node) {
 
 error codeData(char *line, list *dataList, int *counter) {
     char *word = NULL, *endPTR = NULL;
-    int num = 0;
+    int num = 0, i;
     Node *newNode = NULL;
     getToken(&line, &word, ",");
     if (!word)
         getToken(&line, &word, NULL);
     while (word) {
-        num = (int) strlen(word);
-        clearWhiteSpace(&word);
-        if (num != strlen(word) && line)
-            return missingComma;
+        if(!word || !strcmp(word,"")) {
+            fprintf(stderr,"\tConsecutive commas in .data command\n");
+            return consecutiveCommas;
+        }
         num = strtol(word, &endPTR, 10);
-        if (strcmp(endPTR, ""))
-            return unknownArg;
+        if (strcmp(endPTR, "")) {
+            for (i = 0; i < strlen(endPTR); ++i) {
+                if (!isspace(endPTR[i])) {
+                    fprintf(stderr, "\tAn unrecognized argument in .data, or missing comma(s)\n");
+                    free(word);
+                    free(line);
+                    return unknownArg;
+                }
+            }
+        }
         newNode = (Node *) calloc(1, sizeof(Node));
         checkAlloc(newNode);
         binaryOf(newNode->data.InstructionCode, num, sizeof(newNode->data.InstructionCode) - 1);
@@ -215,13 +243,19 @@ error codeString(char *line, list *dataList, int *counter) {
     char ch = line[i];
     if (line == NULL)
         return emptyArg;
-    if (OGNode)
-        while (OGNode->next)
-            OGNode = OGNode->next;
-    while (ch != '\0' && ch != '\"')
+    while (OGNode)
+        OGNode = OGNode->next;
+    while (ch != '\0' && ch != '\"') {
+        if(isalpha(ch)){
+            free(line);
+            fprintf(stderr, "\tA .string command is missing an argument\n");
+            return tooManyArg;
+        }
         ch = line[i++];
+    }
     if (ch == '\0') {
         free(line);
+        fprintf(stderr, "\tA .string command is missing an argument\n");
         return missingParentheses;
     }
     ch = line[++i];
@@ -242,7 +276,19 @@ error codeString(char *line, list *dataList, int *counter) {
         (*counter) -= dataList->count;
         clearList(dataList, &OGNode);
         (*counter) += dataList->count;
+        fprintf(stderr, "\tA .string command is missing a closing parentheses\n");
+        free(line);
         return missingClosingParentheses;
+    }
+    while ((ch = line[++i]) != '\0') {
+        if (!isalpha(ch) && !isspace(ch)) {
+            (*counter) -= dataList->count;
+            clearList(dataList, &OGNode);
+            (*counter) += dataList->count;
+            fprintf(stderr, "\tA .string command has too many args\n");
+            free(line);
+            return tooManyArg;
+        }
     }
     free(line);
     return success;
@@ -262,6 +308,10 @@ error codeCommand (char *line, list *instructionList, opcode command, int *count
             am1 = 0;
             if (!label) {
                 getToken(&line, &arg2, NULL);
+                if(arg2 && strpbrk(arg2,",\t ")){
+                    fprintf(stderr, "\tCommand has too many arguments\n");
+                    return tooManyArg;
+                }
                 idArg(&arg2, &am2);
                 arg1 = NULL;
             } else {
@@ -269,12 +319,20 @@ error codeCommand (char *line, list *instructionList, opcode command, int *count
                 idArg(&arg1, &prm1);
                 getToken(&line, &arg2, ")");
                 idArg(&arg2, &prm2);
-                if (arg1 && !arg2)
-                    return missingArg;
                 clearWhiteSpace(&line);
-                if (line)
+                if (line) {
+                    fprintf(stderr, "\tCommand has too many arguments\n");
                     return tooManyArg;
+                }
                 am2 = jumpWP;
+            }
+            if (arg2 == NULL) {
+                fprintf(stderr, "\tCommand is missing arguments\n");
+                return missingArg;
+            }
+            if (am2 != direct && am2!= jumpWP) {
+                fprintf(stderr, "\tCommand has a wrong type of argument\n");
+                return wrongArg;
             }
             break;
         case mov:
@@ -284,13 +342,21 @@ error codeCommand (char *line, list *instructionList, opcode command, int *count
         case sub:
             prm1 = prm2 = 0;
             getToken(&line, &arg1, ",");
-            idArg(&arg1, &am1);
             getToken(&line, &arg2, NULL);
-            idArg(&arg2, &am2);
-            if (!arg2 || !arg1)
+            if (!arg2 || !arg1 || !strcmp(arg1, "")) {
+                fprintf(stderr, "\tCommand is missing arguments\n");
                 return missingArg;
-            if (am2 == immediate)
+            }
+            if (strpbrk(arg2, ", \t") != NULL) {
+                fprintf(stderr, "\tConsecutive commas or Too many args\n");
+                return consecutiveCommas;
+            }
+            idArg(&arg1, &am1);
+            idArg(&arg2, &am2);
+            if ((command == lea && am1 != direct) || am2 == immediate) {
+                fprintf(stderr, "\tCommand has a wrong type of argument\n");
                 return wrongArg;
+            }
             break;
         case not:
         case clr:
@@ -302,17 +368,28 @@ error codeCommand (char *line, list *instructionList, opcode command, int *count
             label = arg1 = NULL;
             am1 = 0;
             getToken(&line, &arg2, NULL);
-            idArg(&arg2, &am2);
-            if (!arg2)
+            if (!arg2) {
+                fprintf(stderr, "\tCommand is missing arguments\n");
                 return missingArg;
+            }
+            if(strpbrk(arg2,", \t")){
+                fprintf(stderr, "\tCommand has too many arguments\n");
+                return tooManyArg;
+            }
+            if (!(command == prn || command == not) && idArg(&arg2, &am2) == success && am2 == immediate) {
+                fprintf(stderr, "\tCommand has a wrong type of argument\n");
+                return wrongArg;
+            }
             break;
         case stop:
         case rts:
             am1 = am2 = 0;
             label = arg1 = arg2 = NULL;
             clearWhiteSpace(&line);
-            if (line)
+            if (line) {
+                fprintf(stderr, "\tCommand has too many arguments\n");
                 return tooManyArg;
+            }
             break;
         default:
             break;
@@ -342,8 +419,10 @@ error codeCommand (char *line, list *instructionList, opcode command, int *count
         switch (am1) {
             case immediate:
                 argVal = strtol(arg1 + 1, &endPTR, 10);
-                if (strcmp(endPTR, ""))
+                if (strcmp(endPTR, "")) {
+                    fprintf(stderr,"\tCommand has an unknown argument\n");
                     return unknownArg;
+                }
                 binaryOf(newNode->data.InstructionCode, argVal, IMMEDIATE_SIZE);
                 binaryOf(newNode->data.InstructionCode + ARE_START, ARE_Immediate, ARE_SIZE);
                 addToList(instructionList, &newNode);
@@ -368,8 +447,10 @@ error codeCommand (char *line, list *instructionList, opcode command, int *count
                 checkAlloc(newNode);
                 newNode->data.place = (*count)++;
                 argVal = strtol(arg2 + 1, &endPTR, 10);
-                if (strcmp(endPTR, ""))
+                if (strcmp(endPTR, "")) {
+                    fprintf(stderr,"\tCommand has an unknown argument\n");
                     return unknownArg;
+                }
                 binaryOf(newNode->data.InstructionCode, argVal, 12);
                 binaryOf(newNode->data.InstructionCode + ARE_START, ARE_Immediate, 2);
                 break;
@@ -416,11 +497,21 @@ error printList (list *lst, Node **node) {
 
 error codeLabel (opcode type, char* line , list* labelList) {
     error err;
-    Node *node=NULL, *newNode=NULL;
+    Node *node = NULL, *newNode = NULL;
     char *label = NULL;
     getToken(&line, &label, ",");
+    if (!line) {
+        fprintf(stderr, "\tError: Missing label \n");
+        free(label);
+        return missingArg;
+    }
+    if(idLabel(line)!=success){
+        free(label);
+        free(line);
+        return tooManyArg;
+    }
     if (strlen(line) > LABEL_MAX_SIZE) {
-        fprintf(stderr, "Error: The definition of the label %s is too long\n", line);
+        fprintf(stderr, "\tError: The definition of the label %s is too long\n", line);
         free(label);
         free(line);
         return labelTooLong;
@@ -428,7 +519,7 @@ error codeLabel (opcode type, char* line , list* labelList) {
     if (label == NULL) {
         clearWhiteSpace(&line);
         if ((err = strIsAlphaDigit(line)) != success) {
-            fprintf(stderr, "Error: The definition of label %s is incorrect\n", line);
+            fprintf(stderr, "\tError: The definition of label %s is incorrect\n", line);
             free(label);
             free(line);
             return wrongDefLabel;
@@ -446,8 +537,8 @@ error codeLabel (opcode type, char* line , list* labelList) {
             } else if (err == labelExists) {
                 if (node->data.type != type) {
                     /*fixes label "place" problem:*/
-                    if(node->data.type==none)
-                        node->data.type=type;
+                    if (node->data.type == none)
+                        node->data.type = type;
                     else {
                         newNode = createNodeFirstRun(label, type, -1, "");
                         addToList(labelList, &newNode);
@@ -457,14 +548,14 @@ error codeLabel (opcode type, char* line , list* labelList) {
                     free(newNode);
                     return success;
                 } else {
-                    fprintf(stderr, "Error: The definition of label %s is already exists\n", node->data.name);
+                    fprintf(stderr, "\tError: The definition of label %s is already exists\n", node->data.name);
                     free(label);
                     free(line);
                     free(newNode);
                     return labelExists;
                 }
             } else if (line == NULL) {
-                fprintf(stderr, "Error: The definition of label %s is already exists\n", node->data.name);
+                fprintf(stderr, "\tError: The definition of label %s is already exists\n", node->data.name);
                 free(label);
                 free(line);
                 free(newNode);
@@ -472,13 +563,13 @@ error codeLabel (opcode type, char* line , list* labelList) {
             }
         }
     } else if ((err = strIsAlphaDigit(line)) != success) {
-        fprintf(stderr, "Error: Definition of two labels at once\n");
+        fprintf(stderr, "\tError: Definition of two labels at once\n");
         free(label);
         free(line);
         free(newNode);
         return wrongDefLabel;
     } else {
-        fprintf(stderr, "Error: The definition of the label %s is incorrect\n", line);
+        fprintf(stderr, "\tError: The definition of the label %s is incorrect\n", line);
         free(label);
         free(line);
         free(newNode);
@@ -493,70 +584,79 @@ error codeLabel (opcode type, char* line , list* labelList) {
 
 error setLabelAddress ( list *lst, char* name,int address) {
     Node *relevantNode, *temp;
-    if (searchNode(lst, name, &relevantNode) != labelExists) {
-        relevantNode = (Node *) calloc(1, sizeof(Node));
-        checkAlloc(relevantNode);
-        strcpy(relevantNode->data.name, name);
-        relevantNode->data.type = none;
-        temp = relevantNode;
-        addToList(lst, &relevantNode);
-        relevantNode = temp;
+    if (idLabel(name) == success) {
+        if (searchNode(lst, name, &relevantNode) != labelExists) {
+            relevantNode = (Node *) calloc(1, sizeof(Node));
+            checkAlloc(relevantNode);
+            strcpy(relevantNode->data.name, name);
+            relevantNode->data.type = none;
+            temp = relevantNode;
+            addToList(lst, &relevantNode);
+            relevantNode = temp;
+        } else if (relevantNode->data.place != -1)
+            return labelExists;
+        relevantNode->data.place = address;
+        return success;
     }
-    relevantNode->data.place = address;
-    return success;
+    return unknownArg;
 }
 
 error idArg(char **arg, addressMethod *amArg) {
-    if (!arg) {
+    char *EndPtr;
+    clearWhiteSpace(arg);
+    if (arg == NULL || (*arg) == NULL) {
         *amArg = 0;
         return emptyArg;
     }
-    clearWhiteSpace(arg);
     if ((*arg)[0] == '#') {
         *amArg = immediate;
         return success;
     } else if (strlen(*arg) == REGI_NAME_SIZE && (*arg)[0] == 'r' && '0' <= (*arg)[1] && (*arg)[1] <= '7') {
         *amArg = directRegister;
         return success;
-    } else
+    } else if (idLabel(*arg) == success) {
         *amArg = direct;
+        return success;
+    }
     return unknownArg;
 }
 
 error firstRun (char *path) {
     Node *node;
     FILE *stream;
-    error errFlag=success;
+    error errFlag = success;
     opcode commandOP;
     list dataList = {0};
     list labelList = {0};
     list instructionList = {0};
-    int IC = 100, DC=0;
+    int IC = 100, DC = 0;
     char *label, *word, *line;
     openFile(&stream, path, ".am");
     while (!feof(stream)) {
         getOneLine(&line, stream);
-        removeComments(&line);
-        printf("%s", line);
-        getToken(&line, &label, ":"); /*Get label if exists*/
-        getToken(&line, &word, " \t\n"); /*Get first word of line*/
+        errFlag = removeComments(&line);
+        printf("%s\n", line);
+        errFlag = getToken(&line, &label, ":"); /*Get label if exists*/
+        errFlag = getToken(&line, &word, " \t\n"); /*Get first word of line*/
+        if(!word)
+            errFlag = getToken(&line, &word, NULL);
         if (!line) {
             free(word);
             continue;
         }
-        idCommand(word, &commandOP); /*Identify the command and assign an enum value */
+        errFlag = idCommand(word, &commandOP); /*Identify the command and assign an enum value */
         if (label && (commandOP == data || commandOP == string))
-            setLabelAddress(&labelList, label, DC+IC);
+            errFlag = setLabelAddress(&labelList, label, DC + IC);
         switch (commandOP) {
             case none:
-                errFlag = undefinedCommand;
+                fprintf(stderr,"\tUndefined command encountered\n");
                 free(line);
                 break;
             case data:
-                codeData(line, &dataList, &DC);
+                errFlag = codeData(line, &dataList, &DC);
                 break;
             case string:
-                codeString(line, &dataList, &DC);
+                errFlag = codeString(line, &dataList, &DC);
                 break;
             case external:
             case entry:
@@ -569,30 +669,30 @@ error firstRun (char *path) {
                 break;
             default:
                 if (label)
-                    setLabelAddress(&labelList, label, IC);
-                codeCommand(line, &instructionList, commandOP, &IC);
+                    errFlag = setLabelAddress(&labelList, label, IC);
+                errFlag = codeCommand(line, &instructionList, commandOP, &IC);
                 break;
         }
         free(label);
         free(word);
     }
-    node=dataList.head;
+    node = dataList.head;
     while (node) {
         node->data.place += IC;
         node = node->next;
     }
 
-    closeFile(stream);
-    printList(&instructionList, NULL);
+    errFlag = closeFile(stream);
+    /*errFlag = printList(&instructionList, NULL);
     printf("\n");
-    printList(&dataList, NULL);
+    errFlag = printList(&dataList, NULL);
     printf("\n");
-    printList(&labelList,NULL);
-    secondRun(&dataList, &labelList, &instructionList, path, errFlag);
-    clearList(&instructionList, NULL);
-    clearList(&labelList, NULL);
-    clearList(&dataList, NULL);
-    return success;
+    errFlag = printList(&labelList, NULL);*/
+    //secondRun(&dataList, &labelList, &instructionList, path, errFlag);
+    errFlag = clearList(&instructionList, NULL);
+    errFlag = clearList(&labelList, NULL);
+    errFlag = clearList(&dataList, NULL);
+    return errFlag;
 }
 
 error secondRun(list* dataList, list* labelList, list* instructionList,char* fileName, error errFlag) {
@@ -620,7 +720,7 @@ error secondRun(list* dataList, list* labelList, list* instructionList,char* fil
                 }
             } else {
                 errFlag = missingLabel;
-                fprintf(stderr, "missing label %s \n", currentNode->data.name);
+                fprintf(stderr, "\tmissing label %s \n", currentNode->data.name);
             }
         }
         currentNode = currentNode->next;

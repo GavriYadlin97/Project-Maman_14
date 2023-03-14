@@ -2,6 +2,7 @@
 
 #include "mainHeader.h"
 
+
 void freeString(char** ptr){
     if(*ptr){
         free(*ptr);
@@ -42,7 +43,11 @@ error openFile (FILE **filePointer, char *filePath, char *suffix) {
     strcat(path, suffix);
     *filePointer = fopen(path, "r");
     free(path);
-    return ((!*filePointer) ? fileOpeningErr : success);
+    if (!*filePointer) {
+        perror("File opening error");
+        return fileOpeningErr;
+    }
+    return success;
 }
 
 /* Function receives a pointer to a FILE pointer and a file path (string)
@@ -55,7 +60,11 @@ error createFile (FILE **filePointer, char *filePath, char *suffix) {
     strcat(path, suffix);
     *filePointer = fopen(path, "w");
     free(path);
-    return ((!*filePointer) ? fileOpeningErr : success);
+    if (!*filePointer) {
+        perror("File creating error");
+        return fileOpeningErr;
+    }
+    return success;
 }
 
 /* Function receives a FILE pointer
@@ -83,18 +92,21 @@ error getToken(char **str, char **token, char *delim) {
             str = NULL;
         return emptyArg;
     }
-    /*if delim is null, copy entire string to token*/
-    if (!delim) {
-        *token = (char *) malloc(strlen(*str) + 1);
-        checkAlloc(token);
-        strcpy(*token, *str);
-        free(*str);
-        *str = NULL;
-        return success;
-    }
     /*Skip white spaces from the beginning of the string*/
     while (isspace((*str)[i]))
         i++;
+    /*if delim is null, copy entire string to token*/
+    if (!delim) {
+        if (strcmp(*str, "")) {
+            *token = (char *) malloc(strlen(*str + i) + 1);
+            checkAlloc(token);
+            strcpy(*token, *str + i);
+            free(*str);
+            *str = NULL;
+        } else
+            *token = NULL;
+        return success;
+    }
     /*If reached the end of the string*/
     if ((*str)[i] == '\0') {
         free(*str);
@@ -119,13 +131,6 @@ error getToken(char **str, char **token, char *delim) {
     return success;
 } /*Caller MUST free '*token' and '*str' */
 
-error insertSuffix(char *str,char **newStr,char *suffix) {
-    *newStr = (char *) malloc(strlen(str) + strlen(suffix) + 1);
-    checkAlloc(newStr);
-    strcpy(*newStr, str);
-    strcat(*newStr, suffix);
-    return success;
-}
 
 error removeComments(char **str) {
     char *ch;
@@ -150,8 +155,8 @@ error getOneLine(char **line_out, FILE * fp) {
     while (1) {
         char current = (char) fgetc(fp);
         if (current == EOF || current == '\n') {
-            buffer[bytes_readen] = '\n';
-            buffer[++bytes_readen] = '\0';
+            //buffer[bytes_readen] = '\n';
+            buffer[bytes_readen] = '\0';
             *line_out = strdup(buffer);
             free(buffer);
             return (current == EOF) ? endOfFile : success;

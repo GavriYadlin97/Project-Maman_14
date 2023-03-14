@@ -27,7 +27,6 @@ typedef enum Error{
     fileClosingErr,
     emptyArg,
     memoryAllocErr,
-    noMemory,
     endOfFile,
     noMcr,
     undefinedCommand,
@@ -43,7 +42,8 @@ typedef enum Error{
     missingArg,
     tooManyArg,
     wrongArg,
-    missingLabel
+    missingLabel,
+    consecutiveCommas
 }error;
 
 /*Enum for opcodes */
@@ -77,7 +77,6 @@ error createFile(FILE **filePointer, char *filePath, char *suffix);
 error closeFile(FILE *filePointer);
 error getToken(char **str, char **token, char *delim);
 error getOneLine(char **line_out, FILE *fp);
-error insertSuffix(char *str, char **newStr, char *suffix);
 error removeComments(char **str);
 char *removeWhiteSpace(char *str);
 void freeString(char **ptr);
