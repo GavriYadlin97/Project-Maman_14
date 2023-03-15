@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdarg.h>
 
 /*Various defines*/
 #define LINE_MAX_LENGTH 81
@@ -80,6 +81,7 @@ error getOneLine(char **line_out, FILE *fp);
 error removeComments(char **str);
 char *removeWhiteSpace(char *str);
 void freeString(char **ptr);
+void freeMulti (void *ptr, ...);
 void checkAlloc(void *);
 
 

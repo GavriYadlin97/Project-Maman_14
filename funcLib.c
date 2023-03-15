@@ -33,6 +33,20 @@ void checkAlloc (void *test) {
     }
 }
 
+/*Frees several pointers, sets them to Null, called with address of the pointer:
+ * LAST ONE MUST BE NULL: freeMulti(&a,&b,&c,NULL);*/
+void freeMulti(void *ptr, ...) {
+    va_list args;
+    va_start(args, ptr);
+    void **nextPtr = ptr;
+    while (nextPtr != NULL) {
+        free(*nextPtr);
+        *nextPtr = NULL;
+        nextPtr = va_arg(args, void **);
+    }
+    va_end(args);
+}
+
 /* Function receives a pointer to a FILE pointer and a file path (string)
  * The function opens the file and alerts if any errors occurred
  * returns an error code represented as an error enum*/
@@ -148,9 +162,8 @@ error removeComments(char **str) {
 /* get one line in a time, the function receives pointer to a string and pointer to a file,
  * takes one line from the file and copy it to the receiving string*/
 error getOneLine(char **line_out, FILE * fp) {
-    size_t buffer_size = LINE_MAX_LENGTH;
     int bytes_readen = 0;
-    char *buffer = (char *) malloc(buffer_size * sizeof(char));
+    char *buffer = (char *) malloc(LINE_MAX_LENGTH * sizeof(char));
     checkAlloc(buffer);
     while (1) {
         char current = (char) fgetc(fp);
