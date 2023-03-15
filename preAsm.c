@@ -73,7 +73,7 @@ error is_mcr_def( char* lineOut){
 error is_mcrEnd(char *line){
     char* linecpy;
     linecpy= removeWhiteSpace(line);
-    if(!strcmp(linecpy,"endmcr\n")){
+    if(!strcmp(linecpy,"endmcr")){
         return success;
     }
     else return noMcr;
@@ -135,6 +135,7 @@ error preAssembler(char* fileName){
                     currentNode = currentNode->next;
                 }
                 fputs(currentNode->data.code,fpAm);
+                //fputs("\n",fpAm);
                 fflush(fpAm);
                 freeString(&line);
                 freeString(&linecpy);
@@ -164,6 +165,7 @@ error preAssembler(char* fileName){
             else /*not macro definition or macro name*/
             {
                 fputs(line, fpAm);
+                fputs("\n",fpAm);
                 fflush(fpAm);
                 freeString(&line);
                 freeString(&linecpy);
@@ -172,6 +174,7 @@ error preAssembler(char* fileName){
         else break;
     }
     fputs(line, fpAm);
+    fputs("\n",fpAm);
     fflush(fpAm);
     fclose(fileSrc);
     fclose(fpAm);
@@ -196,6 +199,6 @@ char* concatenateStrings(char* str1, char* str2) {
     strcpy(result, str1);
     strcat(result,"\t\t");
     strcat(result, str2);
-
+    strcat(result,"\n");
     return result;
 }
