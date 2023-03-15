@@ -51,19 +51,22 @@ struct NodeMcr * createNode(char * name, char* code) {
     strcpy(newNode->data.name, name);
     strcpy(newNode->data.code,code);
     newNode->next = NULL;
+    free(code);
     return newNode;
 }
 
 /*Checks if it is a definition of a macro "mcr" and if so return success
  * the function receives two pointers of string, line and copy of line*/
-error is_mcr_def( char* lineOut){
-    char * word;
-    getToken(&lineOut,&word," ");
-    if(!strcmp(word,"mcr")){
+error is_mcr_def( char* lineOut) {
+    char *word;
+    getToken(&lineOut, &word, " ");
+    if (!word)
+        return emptyArg;
+    if (!strcmp(word, "mcr")) {
+        free(word);
         return success;
-    }
-    else{
-        /*free(lineOut);*/
+    } else {
+        free(word);
         return noMcr;
     }
 }
@@ -106,9 +109,8 @@ error preAssembler(char* fileName){
     FILE *fpAm, *fileSrc;
     char *line,*name=NULL,*linecpy,*code="";
     int i;
-    char *newFileName;
+    char *newFileName, *codemcr;
 
-    line= (char *) malloc(sizeof (char)*LINE_MAX_LENGTH);
 
     /*Building a linked list of macros*/
     ListMcr * mcrList = calloc(1,sizeof (ListMcr));
@@ -122,6 +124,7 @@ error preAssembler(char* fileName){
         if( (getOneLine(&line,fileSrc))== success)
         {
             linecpy=(char *) malloc(sizeof (char)*LINE_MAX_LENGTH);
+            checkAlloc(linecpy);
             strcpy(linecpy,line);
 
             /*checks name of macro */
@@ -147,10 +150,10 @@ error preAssembler(char* fileName){
                 name= malloc(sizeof (char )* strlen(linecpy)+1);
                 strcpy(name, linecpy);
                 freeString(&line);
-                free(linecpy);
-                linecpy=NULL;
+                freeString(&linecpy);
                 getOneLine(&line,fileSrc);
-                char * codemcr="";
+                codemcr = calloc(1, sizeof(char ));
+
 
                 /*copying code to the node of the list until "endmcr"*/
                 while ((is_mcrEnd(line))!= success){
@@ -175,7 +178,6 @@ error preAssembler(char* fileName){
     }
     fputs(line, fpAm);
     fputs("\n",fpAm);
-    fflush(fpAm);
     fclose(fileSrc);
     fclose(fpAm);
     clearList(mcrList,NULL);
@@ -190,15 +192,15 @@ error preAssembler(char* fileName){
 char* concatenateStrings(char* str1, char* str2) {
     int len1 = strlen(str1);
     int len2 = strlen(str2);
-    char* result = malloc(len1 + len2 + 2);
-    if (result == NULL) {
-        printf("Error: Out of memory.\n");
-        exit(1);
-    }
-    str2=removeWhiteSpace(str2);
+    char *result = malloc(len1 + len2 + 4);
+    /*strlen("\t\t")+strlen("\n")+strlen("\0") = 4*/
+    checkAlloc(result);
+    str2 = removeWhiteSpace(str2);
     strcpy(result, str1);
-    strcat(result,"\t\t");
+    strcat(result, "\t\t");
     strcat(result, str2);
     strcat(result,"\n");
+    free(str1);
+    free(str2);
     return result;
 }
