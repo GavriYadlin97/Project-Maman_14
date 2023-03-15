@@ -171,7 +171,7 @@ error preAssembler(char* fileName){
                 fputs("\n",fpAm);
                 fflush(fpAm);
                 freeString(&line);
-                freeString(&linecpy);
+                /*freeString(&linecpy);*/
             }
         }
         else break;
@@ -182,7 +182,7 @@ error preAssembler(char* fileName){
     fclose(fpAm);
     clearList(mcrList,NULL);
     freeString(&line);
-    freeString(&linecpy);
+    /*freeString(&linecpy);*/
     freeString(&name);
     free(mcrList);
     return success;
