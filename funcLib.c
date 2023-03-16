@@ -36,9 +36,9 @@ void checkAlloc (void *test) {
 /*Frees several pointers, sets them to Null, called with address of the pointer:
  * LAST ONE MUST BE NULL: freeMulti(&a,&b,&c,NULL);*/
 void freeMulti(void *ptr, ...) {
+    void **nextPtr = ptr;
     va_list args;
     va_start(args, ptr);
-    void **nextPtr = ptr;
     while (nextPtr != NULL) {
         free(*nextPtr);
         *nextPtr = NULL;
@@ -170,7 +170,7 @@ error getOneLine(char **line_out, FILE * fp) {
         if (current == EOF || current == '\n' || current == '\r') {
             /*buffer[bytes_readen] = '\n';*/
             buffer[bytes_readen] = '\0';
-            *line_out = strdup(buffer);
+            (*line_out) = strdup(buffer);
             free(buffer);
             return (current == EOF) ? endOfFile : success;
         } else

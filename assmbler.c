@@ -154,8 +154,8 @@ static error idLabel (char* arg) {
 }
 
 static error addToList(list *lst, Node **nodeToAdd) {
-    (*nodeToAdd)->next = NULL;
     Node *ptr = lst->head;
+    (*nodeToAdd)->next = NULL;
     (*nodeToAdd)->next = NULL;
     if (ptr) {
         while (ptr->next)
@@ -238,9 +238,10 @@ error codeData(char *line, list *dataList, int *counter) {
 error codeString(char *line, list *dataList, int *counter) {
     Node *newNode, *OGNode = dataList->head;
     int i = 0;
-    char ch = line[i];
+    char ch;
     if (line == NULL)
         return emptyArg;
+    ch = line[i];
     while (OGNode)
         OGNode = OGNode->next;
     while (ch != '\0' && ch != '\"') {
@@ -578,7 +579,6 @@ error setLabelAddress ( list *lst, char* name,int address) {
 }
 
 error idArg(char **arg, addressMethod *amArg) {
-    char *EndPtr;
     clearWhiteSpace(arg);
     if (arg == NULL || (*arg) == NULL) {
         *amArg = 0;
@@ -663,7 +663,7 @@ error firstRun (char *path) {
     errFlag = printList(&dataList, NULL);
     printf("\n");
     errFlag = printList(&labelList, NULL);
-    /*secondRun(&dataList, &labelList, &instructionList, path, errFlag);*/
+    secondRun(&dataList, &labelList, &instructionList, path, errFlag);
     errFlag = clearList(&instructionList, NULL);
     errFlag = clearList(&labelList, NULL);
     errFlag = clearList(&dataList, NULL);
@@ -754,4 +754,5 @@ error secondRun(list* dataList, list* labelList, list* instructionList,char* fil
             fclose(fpExt);
         }
     }
+    return success;
 }

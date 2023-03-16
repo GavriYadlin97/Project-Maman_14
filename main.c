@@ -6,7 +6,7 @@
 int main(int argc, char *argv[]) {
 
     preAssembler(argv[1]);
-   // firstRun(argv[1]);
+    firstRun(argv[1]);
 
 
 

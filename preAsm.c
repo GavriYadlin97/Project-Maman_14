@@ -51,15 +51,15 @@ struct NodeMcr * createNode(char * name, char* code) {
     strcpy(newNode->data.name, name);
     strcpy(newNode->data.code,code);
     newNode->next = NULL;
-    free(code);
+    freeString(&code);
     return newNode;
 }
 
 /*Checks if it is a definition of a macro "mcr" and if so return success
  * the function receives two pointers of string, line and copy of line*/
-error is_mcr_def( char* lineOut) {
+error is_mcr_def( char **lineOut) {
     char *word;
-    getToken(&lineOut, &word, " ");
+    getToken(lineOut, &word, " ");
     if (!word)
         return emptyArg;
     if (!strcmp(word, "mcr")) {
@@ -109,14 +109,14 @@ error preAssembler(char* fileName){
     FILE *fpAm, *fileSrc;
     char *line,*name=NULL,*linecpy,*code="";
     int i;
-    char *newFileName, *codemcr;
+    char *codemcr;
 
 
     /*Building a linked list of macros*/
     ListMcr * mcrList = calloc(1,sizeof (ListMcr));
+    NodeMcr * newNode = (NodeMcr *) malloc(sizeof (NodeMcr));
     checkAlloc(mcrList);
-    NodeMcr * newNode ;/*= (NodeMcr *) malloc(sizeof (NodeMcr));
-    checkAlloc(newNode);*/
+    checkAlloc(newNode);
 
     openFile(&fileSrc,fileName, ".as");
     createFile(&fpAm,fileName,".am");
@@ -145,7 +145,7 @@ error preAssembler(char* fileName){
                 continue;
             }
                 /*checks definition of macro "mcr"*/
-            else if(!is_mcr_def(linecpy)){
+            else if(!is_mcr_def(&linecpy)){
                 name= malloc(sizeof (char )* strlen(linecpy)+1);
                 strcpy(name, linecpy);
                 freeString(&line);
@@ -191,8 +191,8 @@ error preAssembler(char* fileName){
 
 
 char* concatenateStrings(char* str1, char* str2) {
-    int len1 = strlen(str1);
-    int len2 = strlen(str2);
+    int len1 = (int) strlen(str1);
+    int len2 = (int) strlen(str2);
     char *result = malloc(len1 + len2 + 4);
     /*strlen("\t\t")+strlen("\n")+strlen("\0") = 4*/
     checkAlloc(result);
@@ -200,8 +200,8 @@ char* concatenateStrings(char* str1, char* str2) {
     strcpy(result, str1);
     strcat(result, "\t");
     strcat(result, str2);
-    strcat(result,"\n");
-    free(str1);
-    free(str2);
+    strcat(result, "\n");
+    freeString(&str1);
+    freeString(&str2);
     return result;
 }
