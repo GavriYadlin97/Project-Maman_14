@@ -4,11 +4,10 @@
 #include "preAsm.h"
 
 int main(int argc, char *argv[]) {
-
-    preAssembler(argv[1]);
-    firstRun(argv[1]);
-
-
-
+    int i;
+    for (i = 1; i < argc; i++) {
+        preAssembler(argv[i]);
+        firstRun(argv[i]);
+    }
     return 0;
 }
