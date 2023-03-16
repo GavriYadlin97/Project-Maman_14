@@ -114,9 +114,8 @@ error preAssembler(char* fileName){
 
     /*Building a linked list of macros*/
     ListMcr * mcrList = calloc(1,sizeof (ListMcr));
-    NodeMcr * newNode = (NodeMcr *) malloc(sizeof (NodeMcr));
+    NodeMcr * newNode;
     checkAlloc(mcrList);
-    checkAlloc(newNode);
 
     openFile(&fileSrc,fileName, ".as");
     createFile(&fpAm,fileName,".am");
