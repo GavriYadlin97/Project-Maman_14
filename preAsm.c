@@ -115,8 +115,8 @@ error preAssembler(char* fileName){
     /*Building a linked list of macros*/
     ListMcr * mcrList = calloc(1,sizeof (ListMcr));
     checkAlloc(mcrList);
-    NodeMcr * newNode = (NodeMcr *) malloc(sizeof (NodeMcr));
-    checkAlloc(newNode);
+    NodeMcr * newNode ;/*= (NodeMcr *) malloc(sizeof (NodeMcr));
+    checkAlloc(newNode);*/
 
     openFile(&fileSrc,fileName, ".as");
     createFile(&fpAm,fileName,".am");
@@ -163,6 +163,7 @@ error preAssembler(char* fileName){
                 addToList(newNode,mcrList);
                 codemcr=NULL;
                 freeString(&line);
+                freeString(&name);
             }
             else /*not macro definition or macro name*/
             {
@@ -184,6 +185,7 @@ error preAssembler(char* fileName){
     freeString(&linecpy);
     freeString(&name);
     free(mcrList);
+
     return success;
 }
 
