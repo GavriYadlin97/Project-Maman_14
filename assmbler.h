@@ -45,10 +45,12 @@ typedef struct Code {
     int place;
     char InstructionCode[WORD];
 } Code;
+
 typedef struct Node {
     Code data;
     struct Node *next;
 } Node;
+
 typedef struct List {
     int count;
     Node *head;
@@ -62,5 +64,6 @@ error idArg(char **arg, addressMethod *AMarg);
 error searchNode(list *list, char *name, Node **nodeOut);
 struct Node *createNodeFirstRun(char *name, opcode opcode, int place, char *instructionCode);
 error secondRun(list *dataList, list *labelList, list *instructionList, char *fileName, error errFlag);
+
 
 #endif /*PROJECT_MAMAN_14_ASMFIRSTRUN_H*/

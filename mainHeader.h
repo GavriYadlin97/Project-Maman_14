@@ -14,10 +14,6 @@
 
 /*Various defines*/
 #define LINE_MAX_LENGTH 81
-#define TRUE 1
-#define FALSE 0
-#define MAX_MCR 256
-#define TABLE_SIZE 100
 #define WORD 15
 #define LABEL_MAX_SIZE 31
 
@@ -81,10 +77,7 @@ error getOneLine(char **line_out, FILE *fp);
 error removeComments(char **str);
 char *removeWhiteSpace(char *str);
 void freeString(char **ptr);
-void freeMulti (void *ptr, ...);
+void freeMulti(void *ptr, ...);
 void checkAlloc(void *);
-
-
-
 
 #endif /*PROJECT_MAMAN_14_MAINHEADER_H*/

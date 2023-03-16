@@ -3,17 +3,17 @@
 #include "mainHeader.h"
 
 
-void freeString(char** ptr){
-    if(*ptr){
+void freeString(char **ptr) {
+    if (*ptr) {
         free(*ptr);
-        *ptr=NULL;
+        *ptr = NULL;
     }
 }
 
 /*remove white spaces from the beginning of the string
  * received pointer to string
  * return pointer to string*/
-char* removeWhiteSpace(char* str) {
+char *removeWhiteSpace(char *str) {
     int len = (int) strlen(str), i;
     char *result = str;
     for (i = 0; i < len; i++) {
@@ -26,7 +26,9 @@ char* removeWhiteSpace(char* str) {
     return str;
 }
 
-void checkAlloc (void *test) {
+/*This function takes in a void pointer as an argument and checks if the pointer is null.
+ * If the pointer is null, it prints an error message and terminates the program.*/
+void checkAlloc(void *test) {
     if (!test) {
         perror("Memory allocation error");
         exit(1);
@@ -50,7 +52,7 @@ void freeMulti(void *ptr, ...) {
 /* Function receives a pointer to a FILE pointer and a file path (string)
  * The function opens the file and alerts if any errors occurred
  * returns an error code represented as an error enum*/
-error openFile (FILE **filePointer, char *filePath, char *suffix) {
+error openFile(FILE **filePointer, char *filePath, char *suffix) {
     char *path = (char *) malloc(strlen(filePath) + strlen(suffix) + 1);
     checkAlloc(path);
     strcpy(path, filePath);
@@ -67,7 +69,7 @@ error openFile (FILE **filePointer, char *filePath, char *suffix) {
 /* Function receives a pointer to a FILE pointer and a file path (string)
  * The function creates the file and alerts if any errors occurred
  * returns an error code represented as an error enum*/
-error createFile (FILE **filePointer, char *filePath, char *suffix) {
+error createFile(FILE **filePointer, char *filePath, char *suffix) {
     char *path = (char *) malloc(strlen(filePath) + strlen(suffix) + 1);
     checkAlloc(path);
     strcpy(path, filePath);
@@ -84,7 +86,7 @@ error createFile (FILE **filePointer, char *filePath, char *suffix) {
 /* Function receives a FILE pointer
  * The function closes the file and alerts if any errors occurred
  * returns an error code represented as an error enum*/
-error closeFile (FILE *filePointer) {
+error closeFile(FILE *filePointer) {
     return ((fclose(filePointer) == EOF) ? fileClosingErr : success);
 }
 
@@ -145,7 +147,9 @@ error getToken(char **str, char **token, char *delim) {
     return success;
 } /*Caller MUST free '*token' and '*str' */
 
-
+/*This function removes comments from a string by finding the first semicolon: ';'
+ * and truncating the string at that point.
+ * Then reallocates memory for the modified string and returns a success or error code.*/
 error removeComments(char **str) {
     char *ch;
     if (str == NULL || *str == NULL)
@@ -169,7 +173,7 @@ char *my_strdup(const char *s) {
 
 /* get one line in a time, the function receives pointer to a string and pointer to a file,
  * takes one line from the file and copy it to the receiving string*/
-error getOneLine(char **line_out, FILE * fp) {
+error getOneLine(char **line_out, FILE *fp) {
     int bytes_readen = 0;
     char *buffer = (char *) malloc(LINE_MAX_LENGTH * sizeof(char));
     checkAlloc(buffer);
@@ -178,7 +182,7 @@ error getOneLine(char **line_out, FILE * fp) {
         if (current == EOF || current == '\n' || current == '\r') {
             /*buffer[bytes_readen] = '\n';*/
             buffer[bytes_readen] = '\0';
-            *line_out= my_strdup(buffer);
+            *line_out = my_strdup(buffer);
             /*(*line_out) = strdup(buffer);*/
             free(buffer);
             return (current == EOF) ? endOfFile : success;
