@@ -159,6 +159,14 @@ error removeComments(char **str) {
     return success;
 }
 
+char *my_strdup(const char *s) {
+    size_t len = strlen(s) + 1; // +1 for null terminator
+    char *newstr = malloc(len);
+    if (newstr == NULL) return NULL; // handle allocation failure
+    strcpy(newstr, s);
+    return newstr;
+}
+
 /* get one line in a time, the function receives pointer to a string and pointer to a file,
  * takes one line from the file and copy it to the receiving string*/
 error getOneLine(char **line_out, FILE * fp) {
@@ -170,7 +178,8 @@ error getOneLine(char **line_out, FILE * fp) {
         if (current == EOF || current == '\n' || current == '\r') {
             /*buffer[bytes_readen] = '\n';*/
             buffer[bytes_readen] = '\0';
-            (*line_out) = strdup(buffer);
+            *line_out= my_strdup(buffer);
+            /*(*line_out) = strdup(buffer);*/
             free(buffer);
             return (current == EOF) ? endOfFile : success;
         } else
