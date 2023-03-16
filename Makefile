@@ -3,7 +3,7 @@
 
 
 OBJ	 = main.o funcLib.o assmbler.o preAsm.o #<.o עם סיומת .c להכניס את השמות של כל קבצי >
-CFLAGS = -ansi -Wall -pedantic -ggdb3
+CFLAGS = -ansi -Wall -pedantic -Werror -g -ggdb3
 
 program: $(OBJ)
 	gcc $(CFLAGS) $^ -o $@

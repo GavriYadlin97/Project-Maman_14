@@ -160,9 +160,9 @@ error removeComments(char **str) {
 }
 
 char *my_strdup(const char *s) {
-    size_t len = strlen(s) + 1; // +1 for null terminator
+    size_t len = strlen(s) + 1; /* +1 for null terminator*/
     char *newstr = malloc(len);
-    if (newstr == NULL) return NULL; // handle allocation failure
+    if (newstr == NULL) return NULL; /* handle allocation failure*/
     strcpy(newstr, s);
     return newstr;
 }
