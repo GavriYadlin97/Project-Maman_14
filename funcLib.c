@@ -168,7 +168,7 @@ error getOneLine(char **line_out, FILE * fp) {
     while (1) {
         char current = (char) fgetc(fp);
         if (current == EOF || current == '\n' || current == '\r') {
-            //buffer[bytes_readen] = '\n';
+            /*buffer[bytes_readen] = '\n';*/
             buffer[bytes_readen] = '\0';
             *line_out = strdup(buffer);
             free(buffer);

@@ -679,7 +679,7 @@ error secondRun(list* dataList, list* labelList, list* instructionList,char* fil
         /*If it's a label and not an encoded line*/
         if (isalpha(currentNode->data.name[0])) {
             if (searchNode(labelList, currentNode->data.name, &nodeOut) == labelExists) {
-                //nodeOut->data.place = currentNode->data.place;
+                /*nodeOut->data.place = currentNode->data.place;*/
                 if (nodeOut->data.type == external) {
                     cntExt++;
                     binaryOf(currentNode->data.InstructionCode, 0, ADDRESS_SIZE);

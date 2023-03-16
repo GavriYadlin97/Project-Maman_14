@@ -138,7 +138,6 @@ error preAssembler(char* fileName){
                     currentNode = currentNode->next;
                 }
                 fputs(currentNode->data.code,fpAm);
-                //fputs("\n",fpAm);
                 fflush(fpAm);
                 freeString(&line);
                 freeString(&linecpy);
@@ -171,7 +170,7 @@ error preAssembler(char* fileName){
                 fputs("\n",fpAm);
                 fflush(fpAm);
                 freeString(&line);
-                /*freeString(&linecpy);*/
+                freeString(&linecpy);
             }
         }
         else break;
@@ -182,7 +181,7 @@ error preAssembler(char* fileName){
     fclose(fpAm);
     clearList(mcrList,NULL);
     freeString(&line);
-    /*freeString(&linecpy);*/
+    freeString(&linecpy);
     freeString(&name);
     free(mcrList);
     return success;
@@ -197,7 +196,7 @@ char* concatenateStrings(char* str1, char* str2) {
     checkAlloc(result);
     str2 = removeWhiteSpace(str2);
     strcpy(result, str1);
-    strcat(result, "\t\t");
+    strcat(result, "\t");
     strcat(result, str2);
     strcat(result,"\n");
     free(str1);
