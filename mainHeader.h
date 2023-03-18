@@ -44,7 +44,8 @@ typedef enum Error{
     tooManyArg,
     wrongArg,
     missingLabel,
-    consecutiveCommas
+    consecutiveCommas,
+    tooLongLine
 }error;
 
 /*Enum for opcodes */

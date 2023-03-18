@@ -176,10 +176,14 @@ error getOneLine(char **line_out, FILE * fp) {
     while (1) {
         char current = (char) fgetc(fp);
         if (current == EOF || current == '\n' || current == '\r') {
+            if(bytes_readen >= LINE_MAX_LENGTH){
+                buffer[bytes_readen] = '\0';
+                fprintf(stderr,"Error: The length of the line %s is longer than 80 characters\n",buffer);
+                return tooLongLine;
+            }
             /*buffer[bytes_readen] = '\n';*/
             buffer[bytes_readen] = '\0';
             *line_out= my_strdup(buffer);
-            /*(*line_out) = strdup(buffer);*/
             free(buffer);
             return (current == EOF) ? endOfFile : success;
         } else

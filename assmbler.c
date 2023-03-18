@@ -674,6 +674,7 @@ error secondRun(list* dataList, list* labelList, list* instructionList,char* fil
     Node *currentNode = NULL, *nodeOut = NULL;
     int i, cntEnt = 0, cntExt = 0;
     FILE *fpObj = NULL, *fpEnt = NULL, *fpExt = NULL;
+    char place[3];
     currentNode = instructionList->head;
     for (i = 0; i < instructionList->count; i++) {
         /*If it's a label and not an encoded line*/
@@ -728,7 +729,8 @@ error secondRun(list* dataList, list* labelList, list* instructionList,char* fil
                 if (currentNode->data.type == entry) {
                     fputs(currentNode->data.name, fpEnt);
                     fputs("\t", fpEnt);
-                    fprintf(fpEnt, "%d", currentNode->data.place);
+                    binaryOf(currentNode->data.InstructionCode,currentNode->data.place,DATA_SIZE);
+                    fputs(currentNode->data.InstructionCode,fpEnt);
                     fputs("\n", fpEnt);
                 }
                 currentNode = currentNode->next;
@@ -745,7 +747,8 @@ error secondRun(list* dataList, list* labelList, list* instructionList,char* fil
                     if (nodeOut->data.type == external) {
                         fputs(currentNode->data.name, fpExt);
                         fputs("\t", fpExt);
-                        fprintf(fpExt, "%d", currentNode->data.place);
+                        binaryOf(currentNode->data.InstructionCode,currentNode->data.place,DATA_SIZE);
+                        fputs(currentNode->data.InstructionCode,fpExt);
                         fputs("\n", fpExt);
                     }
                 }
