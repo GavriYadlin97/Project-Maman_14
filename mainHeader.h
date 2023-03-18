@@ -41,7 +41,7 @@ typedef enum Error{
     wrongArg,
     missingLabel,
     consecutiveCommas,
-    tooLongLine,
+    mcrNameIncorrect,
     removingErr
 }error;
 

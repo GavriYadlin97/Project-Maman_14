@@ -2,6 +2,53 @@
 #include "mainHeader.h"
 #include "preAsm.h"
 
+error isCommand(char *command) {
+    if (!command)
+        return emptyArg;
+    if (!strcmp(command, "mov"))
+        return mcrNameIncorrect;
+    else if (!strcmp(command, "cmp"))
+        return mcrNameIncorrect;
+    else if (!strcmp(command, "add"))
+        return mcrNameIncorrect;
+    else if (!strcmp(command, "sub"))
+        return mcrNameIncorrect;
+    else if (!strcmp(command, "not"))
+        return mcrNameIncorrect;
+    else if (!strcmp(command, "clr"))
+        return mcrNameIncorrect;
+    else if (!strcmp(command, "lea"))
+        return mcrNameIncorrect;
+    else if (!strcmp(command, "inc"))
+        return mcrNameIncorrect;
+    else if (!strcmp(command, "dec"))
+        return mcrNameIncorrect;
+    else if (!strcmp(command, "jmp"))
+        return mcrNameIncorrect;
+    else if (!strcmp(command, "bne"))
+        return mcrNameIncorrect;
+    else if (!strcmp(command, "red"))
+        return mcrNameIncorrect;
+    else if (!strcmp(command, "prn"))
+        return mcrNameIncorrect;
+    else if (!strcmp(command, "jsr"))
+        return mcrNameIncorrect;
+    else if (!strcmp(command, "rts"))
+        return mcrNameIncorrect;
+    else if (!strcmp(command, "stop"))
+        return mcrNameIncorrect;
+    else if (!strcmp(command, ".data"))
+        return mcrNameIncorrect;
+    else if (!strcmp(command, ".string"))
+        return mcrNameIncorrect;
+    else if (!strcmp(command, ".entry"))
+        return mcrNameIncorrect;
+    else if (!strcmp(command, ".extern"))
+        return mcrNameIncorrect;
+    else
+        return success;
+}
+
 static error clearList (ListMcr *lst, NodeMcr **node) {
     if (node && *node) {
         if ((*node)->next)
@@ -110,6 +157,7 @@ error preAssembler(char* fileName){
     char *line,*name=NULL,*linecpy,*code="";
     int i;
     char *codemcr;
+    error err=success;
 
     /*Building a linked list of macros*/
     ListMcr * mcrList = calloc(1,sizeof (ListMcr));
@@ -147,22 +195,37 @@ error preAssembler(char* fileName){
             else if(!is_mcr_def(&linecpy)){
                 name= malloc(sizeof (char )* strlen(linecpy)+1);
                 strcpy(name, linecpy);
-                freeString(&line);
-                freeString(&linecpy);
-                getOneLine(&line,fileSrc);
-                codemcr = calloc(1, sizeof(char ));
+                if(isCommand(name)== success) {
+                    freeString(&line);
+                    freeString(&linecpy);
+                    getOneLine(&line, fileSrc);
+                    codemcr = calloc(1, sizeof(char));
 
 
-                /*copying code to the node of the list until "endmcr"*/
-                while ((is_mcrEnd(line))!= success){
-                    codemcr = concatenateStrings(codemcr, line);
-                    getOneLine(&line,fileSrc);
+                    /*copying code to the node of the list until "endmcr"*/
+                    while ((is_mcrEnd(line)) != success) {
+                        codemcr = concatenateStrings(codemcr, line);
+                        getOneLine(&line, fileSrc);
+                    }
+                    newNode = createNode(name, codemcr);
+                    addToList(newNode, mcrList);
+                    codemcr = NULL;
+                    freeString(&line);
+                    freeString(&name);
                 }
-                newNode= createNode(name,codemcr);
-                addToList(newNode,mcrList);
-                codemcr=NULL;
-                freeString(&line);
-                freeString(&name);
+                else {
+                    err = mcrNameIncorrect;
+                    fprintf(stderr, "Error: The definition of a macro %s cannot be name of command\n",name);
+                    freeString(&line);
+                    freeString(&linecpy);
+                    getOneLine(&line, fileSrc);
+                    while ((is_mcrEnd(line)) != success){
+                        freeString(&line);
+                        getOneLine(&line, fileSrc);
+                    }
+                    freeString(&line);
+                    freeString(&name);
+                }
             }
             else /*not macro definition or macro name*/
             {
@@ -179,13 +242,18 @@ error preAssembler(char* fileName){
     fputs("\n",fpAm);
     fclose(fileSrc);
     fclose(fpAm);
+    if(err!=success){
+        removeFile(fpAm,".am");
+    }
+    /*else
+        fclose(fpAm);*/
     clearList(mcrList,NULL);
     freeString(&line);
     freeString(&linecpy);
     freeString(&name);
     free(mcrList);
 
-    return success;
+    return err;
 }
 
 
