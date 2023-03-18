@@ -3,6 +3,10 @@
 #include "mainHeader.h"
 #include "assmbler.h"
 
+/*This function converts a decimal number to binary and stores the binary representation in a character array.
+ * It takes the character array, the decimal number, and the size of the array as arguments.
+ * It converts the decimal number to binary using the modulo operator and stores the binary digits as either a dot or a slash in the character array.
+ * It pads the remaining elements of the character array with dots and then reverses the order of the elements in the array.*/
 void binaryOf(char binaryForm[], unsigned num, int size) {
     int i = 0;
     while (num > 0 && i < size) {
@@ -18,6 +22,9 @@ void binaryOf(char binaryForm[], unsigned num, int size) {
     reverseSTR(binaryForm, size);
 }
 
+/*This function reverses a string by swapping the first and last character,
+ * then moving inwards until the entire string is reversed.
+ * It takes the string and its size as arguments and modifies the string in place.*/
 void reverseSTR(char str[],int size) {
     int a = 0, b = 0;
     char temp;
@@ -62,14 +69,12 @@ error clearWhiteSpace(char **line) {
     }
     *line = (char *) realloc(*line, sizeof(char) * (strlen(*line) + 1));
     checkAlloc(*line);
-    if (!strcmp(*line, "")) {
-        free(*line);
-        *line = NULL;
-    }
+    if (!strcmp(*line, ""))
+        freeMulti(line, NULL);
     return success;
 }
 
-
+/*Function verifies and identifies the command*/
 error idCommand(char *command, opcode *op) {
     if (!command)
         return emptyArg;
@@ -119,7 +124,6 @@ error idCommand(char *command, opcode *op) {
     return success;
 }
 
-
 /* Function to create a new node*/
 struct Node* createNodeFirstRun(char * name, opcode opcode, int place, char* instructionCode) {
     /* Allocate memory for the new node*/
@@ -133,6 +137,7 @@ struct Node* createNodeFirstRun(char * name, opcode opcode, int place, char* ins
     return newNode;
 }
 
+/*Function verifies and identifies the label*/
 static error idLabel (char* arg) {
     if (strlen(arg) >= LABEL_MAX_SIZE) {
         fprintf(stderr, "\tLabel too long\n");
@@ -153,6 +158,7 @@ static error idLabel (char* arg) {
     return success;
 }
 
+/*Function adds a given node to a given list*/
 static error addToList(list *lst, Node **nodeToAdd) {
     Node *ptr = lst->head;
     (*nodeToAdd)->next = NULL;
@@ -187,6 +193,12 @@ error searchNode(list* list, char* name,Node **nodeOut) {
     return success;
 }
 
+/*function clears a linked list by recursively freeing each node of the list.
+ * It takes the pointer to the list and the current node as arguments.
+ * If the current node is not null, it recursively calls itself with the next node in the list until it reaches the end.
+ * It then frees the current node and sets the node pointer to null.
+ * Finally, it updates the list count and returns a success or error code.
+ * If the node pointer is null, it starts the recursion from the head of the list.*/
 static error clearList (list *lst, Node **node) {
     if (node && *node) {
         if ((*node)->next)
@@ -199,6 +211,10 @@ static error clearList (list *lst, Node **node) {
     return success;
 }
 
+/*This function parses a line of data and adds each data item to a linked list.
+ * It takes the line, a pointer to the linked list, and a counter as arguments.
+ * It uses getToken to extract each data item from the line, converts it to binary using binaryOf, and adds it to a new node in the linked list.
+ * It returns a success or error code based on the outcome of the operation. It also handles errors for consecutive commas, unrecognized arguments, or missing commas.*/
 error codeData(char *line, list *dataList, int *counter) {
     char *word = NULL, *endPTR = NULL;
     int num = 0, i;
@@ -235,6 +251,9 @@ error codeData(char *line, list *dataList, int *counter) {
     return success;
 }
 
+/*Function takes a string argument and converts it to a sequence of binary values, which are then stored in a linked list.
+ * The function checks if the string is in a valid format for a .string command, and if so, it iterates over the characters in the string and adds each one to the linked list in binary form.
+ * If there are any errors encountered during the process, the function frees any memory that was allocated and returns an error code.*/
 error codeString(char *line, list *dataList, int *counter) {
     Node *newNode, *OGNode = dataList->head;
     int i = 0;
@@ -293,6 +312,9 @@ error codeString(char *line, list *dataList, int *counter) {
     return success;
 }
 
+/*The function parses the line and checks for errors in the syntax and semantics of the instruction based on the opcode command.
+ * It then generates the binary code for the instruction and adds it to the list of instructions.
+ * If a label is present, the function also generates a label node and adds it to the list of instructions.*/
 error codeCommand (char *line, list *instructionList, opcode command, int *count) {
     addressMethod am1 = 0, am2 = 0, prm1 = 0, prm2 = 0;
     char *label = NULL, *arg1 = NULL, *arg2 = NULL, *endPTR;
@@ -411,6 +433,7 @@ error codeCommand (char *line, list *instructionList, opcode command, int *count
         am1 = prm1;
         am2 = prm2;
     }
+
     if (arg1) {
         newNode = (Node *) calloc(1, sizeof(Node));
         checkAlloc(newNode);
@@ -476,6 +499,13 @@ error codeCommand (char *line, list *instructionList, opcode command, int *count
     return success;
 }
 
+/*function prints a linked list by recursively printing each node of the list.
+ * It takes the pointer to the list and the current node as arguments.
+ * If the current node is not null, it recursively calls itself with the next node in the list until it reaches the end.
+ * It then prints the current node and sets the node pointer to null.
+ * Finally, it updates the list count and returns a success or error code.
+ * If the node pointer is null, it starts the recursion from the head of the list.
+ * Prints the code of the node or name is code is empty*/
 error printList (list *lst, Node **node) {
     if (node && *node) {
         printf("%04d\t", (*node)->data.place);
@@ -489,6 +519,7 @@ error printList (list *lst, Node **node) {
         printList(lst, &(lst->head));
     return success;
 }
+
 
 error codeLabel (opcode type, char* line , list* labelList) {
     error err;
@@ -559,6 +590,11 @@ error codeLabel (opcode type, char* line , list* labelList) {
     return success;
 }
 
+/*This function sets the address of a label in a linked list of labels.
+ * It first checks if the label exists in the list and if not, it adds a new node for the label.
+ * If the label already exists, it checks if the place attribute of the node is already set and if so, it returns an error.
+ * Finally, it sets the place attribute of the relevant node to the given address.
+ * The function returns an error code indicating success or failure.*/
 error setLabelAddress ( list *lst, char* name,int address) {
     Node *relevantNode, *temp;
     if (idLabel(name) == success) {
@@ -578,6 +614,7 @@ error setLabelAddress ( list *lst, char* name,int address) {
     return unknownArg;
 }
 
+/*Function verifies and identifies the arguments*/
 error idArg(char **arg, addressMethod *amArg) {
     clearWhiteSpace(arg);
     if (arg == NULL || (*arg) == NULL) {
@@ -597,10 +634,13 @@ error idArg(char **arg, addressMethod *amArg) {
     return unknownArg;
 }
 
+/*This is a function that takes a file path as input and performs an initial run through the file to extract information such as labels, commands, and data.
+ * It then modifies the label and data information and passes it along to a second function for further processing.
+ * The function returns an error flag indicating success or failure.*/
 error firstRun (char *path) {
     Node *node;
     FILE *stream;
-    error errFlag = success;
+    error errForSecond = success, errFlag = success;
     opcode commandOP;
     list dataList = {0};
     list labelList = {0};
@@ -608,21 +648,25 @@ error firstRun (char *path) {
     int IC = 100, DC = 0;
     char *label, *word, *line;
     openFile(&stream, path, ".am");
+    printf("Your code:\n");
     while (!feof(stream)) {
         getOneLine(&line, stream);
-        errFlag = removeComments(&line);
+        removeComments(&line);
         printf("%s\n", line);
-        errFlag = getToken(&line, &label, ":"); /*Get label if exists*/
-        errFlag = getToken(&line, &word, " \t\n"); /*Get first word of line*/
+        getToken(&line, &label, ":"); /*Get label if exists*/
+        getToken(&line, &word, " \t\n"); /*Get first word of line*/
         if (!word)
-            errFlag = getToken(&line, &word, NULL);
+            getToken(&line, &word, NULL);
         if (!line && !label && !word) {
             freeMulti(&word, &line, &label, NULL);
             continue;
         }
-        errFlag = idCommand(word, &commandOP); /*Identify the command and assign an enum value */
-        if (label && (commandOP == data || commandOP == string))
+        errFlag = idCommand(word, &commandOP); /*Identify the command*/
+        if (label && (commandOP == data || commandOP == string)) {
             errFlag = setLabelAddress(&labelList, label, DC + IC);
+            if (errFlag != success)
+                errForSecond = errFlag;
+        }
         switch (commandOP) {
             case none:
                 fprintf(stderr, "\tUndefined command encountered\n");
@@ -638,8 +682,7 @@ error firstRun (char *path) {
             case entry:
                 if (label) {
                     errFlag = meaninglessLabel;
-                    free(label);
-                    label = NULL;
+                    freeMulti(&label, NULL);
                 }
                 errFlag = codeLabel(commandOP, line, &labelList);
                 break;
@@ -650,25 +693,31 @@ error firstRun (char *path) {
                 break;
         }
         freeMulti(&label, &word, NULL);
+        if (errFlag != success)
+            errForSecond = errFlag;
     }
     node = dataList.head;
     while (node) {
         node->data.place += IC;
         node = node->next;
     }
-
-    errFlag = closeFile(stream);
-    errFlag = printList(&instructionList, NULL);
+    if(errForSecond==success)
+        printf("first run executed successfully.\n");
+    else
+        printf("Error(s) were found in your code, cannot assemble.\n");
+    closeFile(stream);
+    /*printList(&instructionList, NULL);
     printf("\n");
-    errFlag = printList(&dataList, NULL);
+    printList(&dataList, NULL);
     printf("\n");
-    errFlag = printList(&labelList, NULL);
-    secondRun(&dataList, &labelList, &instructionList, path, errFlag);
-    errFlag = clearList(&instructionList, NULL);
-    errFlag = clearList(&labelList, NULL);
-    errFlag = clearList(&dataList, NULL);
+    printList(&labelList, NULL);*/
+    secondRun(&dataList, &labelList, &instructionList, path, errForSecond);
+    clearList(&instructionList, NULL);
+    clearList(&labelList, NULL);
+    clearList(&dataList, NULL);
     return errFlag;
 }
+
 
 error secondRun(list* dataList, list* labelList, list* instructionList,char* fileName, error errFlag) {
     Node *currentNode = NULL, *nodeOut = NULL;
