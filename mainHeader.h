@@ -41,7 +41,8 @@ typedef enum Error{
     wrongArg,
     missingLabel,
     consecutiveCommas,
-    tooLongLine
+    tooLongLine,
+    removingErr
 }error;
 
 /*Enum for opcodes */
@@ -72,6 +73,7 @@ typedef enum Opcode {
 /*Function header in main.c or funcLib.c only*/
 error openFile(FILE **filePointer, char *filePath, char *suffix);
 error createFile(FILE **filePointer, char *filePath, char *suffix);
+error removeFile(char *filePath, char*suffix);
 error closeFile(FILE *filePointer);
 error getToken(char **str, char **token, char *delim);
 error getOneLine(char **line_out, FILE *fp);

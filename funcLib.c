@@ -83,6 +83,22 @@ error createFile(FILE **filePointer, char *filePath, char *suffix) {
     return success;
 }
 
+/* Function receives a file path (string)
+ * The function deletes the file and alerts if any errors occurred
+ * returns an error code represented as an error enum*/
+error removeFile(char *filePath, char*suffix) {
+    char *path = (char *) malloc(strlen(filePath) + strlen(suffix) + 1);
+    int status;
+    checkAlloc(path);
+    strcpy(path, filePath);
+    strcat(path, suffix);
+    status = remove(path);
+    free(path);
+    if (status != 0)
+        return removingErr;
+    return success;
+}
+
 /* Function receives a FILE pointer
  * The function closes the file and alerts if any errors occurred
  * returns an error code represented as an error enum*/
@@ -189,7 +205,7 @@ error getOneLine(char **line_out, FILE *fp) {
             return (current == EOF) ? endOfFile : success;
         }
         else if (bytes_readen >= LINE_MAX_LENGTH - 1) {
-            *buffer= (char) realloc(buffer,(int)((int)buffer_size*sizeof(char) )*2);
+            buffer= (char*) realloc(buffer,(buffer_size*sizeof(char) )*2);
             if (buffer == NULL) {
                 return memoryAllocErr;
             }

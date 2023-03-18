@@ -652,6 +652,11 @@ error firstRun (char *path) {
     while (!feof(stream)) {
         getOneLine(&line, stream);
         removeComments(&line);
+        if(strlen(line)>LINE_MAX_LENGTH) {
+            fprintf(stderr, "Line length cannot exceed 80 chars (comments exclusive).");
+            free(line);
+            continue;
+        }
         printf("%s\n", line);
         getToken(&line, &label, ":"); /*Get label if exists*/
         getToken(&line, &word, " \t\n"); /*Get first word of line*/
