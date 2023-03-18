@@ -194,6 +194,13 @@ error preAssembler(char* fileName){
                 /*checks definition of macro "mcr"*/
             else if(!is_mcr_def(&linecpy)){
                 name= malloc(sizeof (char )* strlen(linecpy)+1);
+                name ="";
+                getToken(&linecpy, &name, " ");
+                if(linecpy){
+                    err = mcrNameIncorrect;
+                    removeWhiteSpace(line);
+                    fprintf(stderr,"Error: The definition of the macro \"%s\" is incorrect\n",line);
+                }
                 strcpy(name, linecpy);
                 if(isCommand(name)== success) {
                     freeString(&line);
@@ -215,7 +222,7 @@ error preAssembler(char* fileName){
                 }
                 else {
                     err = mcrNameIncorrect;
-                    fprintf(stderr, "Error: The definition of a macro %s cannot be name of command\n",name);
+                    fprintf(stderr, "Error: The definition of a macro %s cannot be a name of command\n",name);
                     freeString(&line);
                     freeString(&linecpy);
                     getOneLine(&line, fileSrc);
@@ -243,7 +250,8 @@ error preAssembler(char* fileName){
     fclose(fileSrc);
     fclose(fpAm);
     if(err!=success){
-        removeFile(fpAm,".am");
+        removeFile(fileName,".am");
+        fprintf(stderr,"cannot open file %s.am\n",fileName);
     }
     /*else
         fclose(fpAm);*/
