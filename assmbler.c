@@ -39,19 +39,7 @@ void reverseSTR(char str[],int size) {
     }
 }
 
-/*Function receives char *
- * the functions checks if the string is alpha or number if so return success
- * if not returns an error code represented as an error enum*/
-error strIsAlphaDigit(char* str){
-    int i;
 
-    for (i=0; str[i]!= '\0' ; i++) {
-        if(!isalnum(str[i])){
-            return wrongDefLabel;
-        }
-    }
-    return success;
-}
 
 /* function takes a pointer to a string (char*) which is dynamically allocated, and five unallocated pointers to string (char*)
  * function divides the given string to Label, command and two arguments (depending on each existence) */

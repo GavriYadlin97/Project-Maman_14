@@ -10,6 +10,20 @@ void freeString(char **ptr) {
     }
 }
 
+/*Function receives char *
+ * the functions checks if the string is alpha or number if so return success
+ * if not returns an error code represented as an error enum*/
+error strIsAlphaDigit(char* str){
+    int i;
+
+    for (i=0; str[i]!= '\0' ; i++) {
+        if(!isalnum(str[i])){
+            return wrongDefLabel;
+        }
+    }
+    return success;
+}
+
 /*remove white spaces from the beginning of the string
  * received pointer to string
  * return pointer to string*/

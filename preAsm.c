@@ -193,14 +193,21 @@ error preAssembler(char* fileName){
             }
                 /*checks definition of macro "mcr"*/
             else if(!is_mcr_def(&linecpy)){
+                if(strIsAlphaDigit(linecpy)!=success){
+                    err = mcrNameIncorrect;
+                    removeWhiteSpace(line);
+                    fprintf(stderr,"Error: The definition of the macro \"%s\" is incorrect\n",line);
+                    continue;
+                }
                 name= malloc(sizeof (char )* strlen(linecpy)+1);
                 name ="";
                 getToken(&linecpy, &name, " ");
-                if(linecpy){
+                if(name){
                     err = mcrNameIncorrect;
                     removeWhiteSpace(line);
                     fprintf(stderr,"Error: The definition of the macro \"%s\" is incorrect\n",line);
                 }
+                name= realloc(name,sizeof(char )* strlen(linecpy)+1);
                 strcpy(name, linecpy);
                 if(isCommand(name)== success) {
                     freeString(&line);
