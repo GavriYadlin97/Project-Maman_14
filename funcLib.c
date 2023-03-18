@@ -174,6 +174,7 @@ char *my_strdup(const char *s) {
 /* get one line in a time, the function receives pointer to a string and pointer to a file,
  * takes one line from the file and copy it to the receiving string*/
 error getOneLine(char **line_out, FILE *fp) {
+    int buffer_size=LINE_MAX_LENGTH;
     int bytes_readen = 0;
     char *buffer = (char *) malloc(LINE_MAX_LENGTH * sizeof(char));
     checkAlloc(buffer);
@@ -186,7 +187,14 @@ error getOneLine(char **line_out, FILE *fp) {
             /*(*line_out) = strdup(buffer);*/
             free(buffer);
             return (current == EOF) ? endOfFile : success;
-        } else
+        }
+        else if (bytes_readen >= LINE_MAX_LENGTH - 1) {
+            *buffer= (char) realloc(buffer,(int)((int)buffer_size*sizeof(char) )*2);
+            if (buffer == NULL) {
+                return memoryAllocErr;
+            }
+        }
+        else
             buffer[bytes_readen++] = current;
     }
 }

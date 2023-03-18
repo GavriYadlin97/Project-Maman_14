@@ -110,7 +110,6 @@ error preAssembler(char* fileName){
     char *line,*name=NULL,*linecpy,*code="";
     int i;
     char *codemcr;
-    error err;
 
     /*Building a linked list of macros*/
     ListMcr * mcrList = calloc(1,sizeof (ListMcr));
@@ -121,7 +120,7 @@ error preAssembler(char* fileName){
     openFile(&fileSrc,fileName, ".as");
     createFile(&fpAm,fileName,".am");
     while (!feof(fileSrc)){
-        if((err= getOneLine(&line,fileSrc))== success)
+        if( getOneLine(&line,fileSrc)== success)
         {
             linecpy=(char *) malloc(sizeof (char)*LINE_MAX_LENGTH);
             checkAlloc(linecpy);
@@ -173,8 +172,7 @@ error preAssembler(char* fileName){
                 freeString(&line);
                 freeString(&linecpy);
             }
-        } else if(err==tooLongLine)
-            continue;
+        }
         else break;
     }
     fputs(line, fpAm);
