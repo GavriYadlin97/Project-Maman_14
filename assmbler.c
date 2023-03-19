@@ -805,8 +805,10 @@ error secondRun(list* dataList, list* labelList, list* instructionList,char* fil
             fclose(fpExt);
         }
     }
-    else
+    else {
         fprintf(stderr, "Errors founds, cannot create file %s.obj\n", fileName);
+        return success;
+    }
     fprintf(stderr,"second run executed successfully.\n" );
     fprintf(stderr, "file %s.obj created successfully.\n", fileName);
     return success;
