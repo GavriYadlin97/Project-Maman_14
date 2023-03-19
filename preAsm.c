@@ -2,6 +2,8 @@
 #include "mainHeader.h"
 #include "preAsm.h"
 
+/*Function checks if definition of mac is a command, if so returns error "mcrNameIncorrect",
+ * if empty returns emptyArg, else returns success, function received char* */
 error isCommand(char *command) {
     if (!command)
         return emptyArg;
@@ -49,6 +51,7 @@ error isCommand(char *command) {
         return success;
 }
 
+/* function free list and nodes, the function recived ListMcr * and NodeMcr** of the head of list*/
 static error clearList (ListMcr *lst, NodeMcr **node) {
     if (node && *node) {
         if ((*node)->next)
@@ -63,7 +66,8 @@ static error clearList (ListMcr *lst, NodeMcr **node) {
     return success;
 }
 
-/*add one node to head of the list*/
+/*add one node to head of the list
+ * received NodeMcr* of the node to add and ListMcr* */
 void addToList(NodeMcr * newElement, ListMcr * list){
     if(list->head == NULL)
     {
@@ -76,7 +80,9 @@ void addToList(NodeMcr * newElement, ListMcr * list){
     list->count++;
 }
 
-/* Function to create a new node*/
+/* Function to create a new node
+ * received char* of name and char* of code
+ * the caller must free at the end*/
 struct NodeMcr * createNode(char * name, char* code) {
     /* Allocate memory for the new node*/
     struct NodeMcr * newNode = (struct NodeMcr*) malloc(sizeof(struct NodeMcr));
@@ -103,7 +109,7 @@ struct NodeMcr * createNode(char * name, char* code) {
 }
 
 /*Checks if it is a definition of a macro "mcr" and if so return success
- * the function receives two pointers of string, line and copy of line*/
+ * the function receives pointer of string*/
 error is_mcr_def( char **lineOut) {
     char *word;
     getToken(lineOut, &word, " ");
@@ -130,9 +136,9 @@ error is_mcrEnd(char *line){
 }
 
 /* function checks if it is a name of macro
- * the function receives string of line, list of macros , and string of code
- * if found name of macro, the string of code receive the code of the matching macro*/
-error is_name_of_mcr(char* line,ListMcr * mcrList,char* code){
+ * the function receives string of line, list of macros
+ * if found name of macro, return success*/
+error is_name_of_mcr(char* line,ListMcr * mcrList){
     char* word;
     int i;
     NodeMcr * currentNode=mcrList->head;
@@ -175,7 +181,7 @@ error preAssembler(char* fileName){
             strcpy(linecpy,line);
 
             /*checks name of macro */
-            if(!is_name_of_mcr(linecpy,mcrList,code)){
+            if(!is_name_of_mcr(linecpy,mcrList)){
                 NodeMcr * currentNode=mcrList->head;
                 linecpy= removeWhiteSpace(linecpy);
                 for(i=0;i< mcrList->count;i++){
@@ -193,7 +199,7 @@ error preAssembler(char* fileName){
             }
                 /*checks definition of macro "mcr"*/
             else if(!is_mcr_def(&linecpy)){
-                if(strIsAlphaDigit(linecpy)!=success){
+                if(strIsAlphaDigit(linecpy)!=success){/*definition of macro with characters */
                     err = mcrNameIncorrect;
                     removeWhiteSpace(line);
                     fprintf(stderr,"Error: The definition of the macro \"%s\" is incorrect\n",line);
@@ -202,14 +208,14 @@ error preAssembler(char* fileName){
                 name= malloc(sizeof (char )* strlen(linecpy)+1);
                 name ="";
                 getToken(&linecpy, &name, " ");
-                if(name){
+                if(name){/* definition of macro with space*/
                     err = mcrNameIncorrect;
                     removeWhiteSpace(line);
                     fprintf(stderr,"Error: The definition of the macro \"%s\" is incorrect\n",line);
                 }
                 name= realloc(name,sizeof(char )* strlen(linecpy)+1);
                 strcpy(name, linecpy);
-                if(isCommand(name)== success) {
+                if(isCommand(name)== success) {/* definition of macro is not a command */
                     freeString(&line);
                     freeString(&linecpy);
                     getOneLine(&line, fileSrc);
@@ -258,10 +264,8 @@ error preAssembler(char* fileName){
     fclose(fpAm);
     if(err!=success){
         removeFile(fileName,".am");
-        fprintf(stderr,"cannot open file %s.am\n",fileName);
+        fprintf(stderr,"cannot create file %s.am\n",fileName);
     }
-    /*else
-        fclose(fpAm);*/
     clearList(mcrList,NULL);
     freeString(&line);
     freeString(&linecpy);
@@ -271,12 +275,14 @@ error preAssembler(char* fileName){
     return err;
 }
 
-
+/*The function concatenates strings of macro code
+ * recevied char * of str1 and str2,
+ * str1 is a string of code we have and str2 is a string of code to add*/
 char* concatenateStrings(char* str1, char* str2) {
     int len1 = (int) strlen(str1);
     int len2 = (int) strlen(str2);
     char *result = malloc(len1 + len2 + 4);
-    /*strlen("\t\t")+strlen("\n")+strlen("\0") = 4*/
+
     checkAlloc(result);
     str2 = removeWhiteSpace(str2);
     strcpy(result, str1);

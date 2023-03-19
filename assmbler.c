@@ -530,7 +530,7 @@ error codeLabel (opcode type, char* line , list* labelList) {
     }
     if (label == NULL) {
         clearWhiteSpace(&line);
-        if ((err = strIsAlphaDigit(line)) != success) {
+        if ((err = strIsAlphaDigit(line)) != success && isalpha(line[0])) {
             fprintf(stderr, "\tError: The definition of label %s is incorrect\n", line);
             freeMulti(&label, &line, NULL);
             return wrongDefLabel;
@@ -695,9 +695,9 @@ error firstRun (char *path) {
         node = node->next;
     }
     if(errForSecond==success)
-        printf("first run executed successfully.\n");
+        fprintf(stderr,"first run executed successfully.\n");
     else
-        printf("Error(s) were found in your code, cannot assemble.\n");
+        fprintf(stderr,"Error(s) were found in your code, cannot assemble.\n");
     closeFile(stream);
     /*printList(&instructionList, NULL);
     printf("\n");
@@ -711,7 +711,13 @@ error firstRun (char *path) {
     return errFlag;
 }
 
-
+/*The function performs a second run, it received lists of labels,
+ * instructions code and data, pointer of string of file name, and error flag
+ * the function complete all information and if there is not an error creates file of obj
+ * if there is a entry label creates file of entries
+ * and if there is a external label creates file of external
+ * returns success
+ * */
 error secondRun(list* dataList, list* labelList, list* instructionList,char* fileName, error errFlag) {
     Node *currentNode = NULL, *nodeOut = NULL;
     int i, cntEnt = 0, cntExt = 0;
@@ -722,7 +728,7 @@ error secondRun(list* dataList, list* labelList, list* instructionList,char* fil
         /*If it's a label and not an encoded line*/
         if (isalpha(currentNode->data.name[0])) {
             if (searchNode(labelList, currentNode->data.name, &nodeOut) == labelExists) {
-                /*nodeOut->data.place = currentNode->data.place;*/
+                /*write binary code of the label*/
                 if (nodeOut->data.type == external) {
                     cntExt++;
                     binaryOf(currentNode->data.InstructionCode, 0, ADDRESS_SIZE);
@@ -799,5 +805,9 @@ error secondRun(list* dataList, list* labelList, list* instructionList,char* fil
             fclose(fpExt);
         }
     }
+    else
+        fprintf(stderr, "Errors founds, cannot create file %s.obj\n", fileName);
+    fprintf(stderr,"second run executed successfully.\n" );
+    fprintf(stderr, "file %s.obj created successfully.\n", fileName);
     return success;
 }
