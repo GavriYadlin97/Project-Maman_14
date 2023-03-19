@@ -706,11 +706,11 @@ error firstRun (char *path) {
     else
         fprintf(stderr,"Error(s) were found in your code, cannot assemble.\n");
     closeFile(stream);
-    printList(&instructionList, NULL);
+    /*printList(&instructionList, NULL);
     printf("\n");
     printList(&dataList, NULL);
     printf("\n");
-    printList(&labelList, NULL);
+    printList(&labelList, NULL);*/
     secondRun(&dataList, &labelList, &instructionList, path, errForSecond);
     clearList(&instructionList, NULL);
     clearList(&labelList, NULL);
