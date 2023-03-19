@@ -131,6 +131,7 @@ static error idLabel (char* arg) {
         fprintf(stderr, "\tLabel too long\n");
         return unknownArg;
     }
+    removeWhiteSpace(arg);
     if (strpbrk(arg, " \t") != NULL) {
         fprintf(stderr, "\tLabel cannot contain white spaces\n");
         return unknownArg;
@@ -546,7 +547,7 @@ error codeLabel (opcode type, char* line , list* labelList) {
             } else if (err == labelExists) {
                 if (node->data.type != type) {
                     /*fixes label "place" problem:*/
-                    if (node->data.type == none)
+                    if (node->data.type != entry && node->data.type != external)
                         node->data.type = type;
                     else {
                         newNode = createNodeFirstRun(label, type, -1, "");
@@ -583,14 +584,14 @@ error codeLabel (opcode type, char* line , list* labelList) {
  * If the label already exists, it checks if the place attribute of the node is already set and if so, it returns an error.
  * Finally, it sets the place attribute of the relevant node to the given address.
  * The function returns an error code indicating success or failure.*/
-error setLabelAddress ( list *lst, char* name,int address) {
+error setLabelAddress ( list *lst, char* name,int address, opcode op) {
     Node *relevantNode, *temp;
     if (idLabel(name) == success) {
         if (searchNode(lst, name, &relevantNode) != labelExists) {
             relevantNode = (Node *) calloc(1, sizeof(Node));
             checkAlloc(relevantNode);
             strcpy(relevantNode->data.name, name);
-            relevantNode->data.type = none;
+            relevantNode->data.type = op;
             temp = relevantNode;
             addToList(lst, &relevantNode);
             relevantNode = temp;
@@ -655,8 +656,9 @@ error firstRun (char *path) {
             continue;
         }
         errFlag = idCommand(word, &commandOP); /*Identify the command*/
-        if (label && (commandOP == data || commandOP == string)) {
-            errFlag = setLabelAddress(&labelList, label, DC + IC);
+        if (label && (commandOP != entry && commandOP != external)) {
+            errFlag = setLabelAddress(&labelList, label, (commandOP == data || commandOP == string ? DC : IC),
+                                      commandOP);
             if (errFlag != success)
                 errForSecond = errFlag;
         }
@@ -680,8 +682,6 @@ error firstRun (char *path) {
                 errFlag = codeLabel(commandOP, line, &labelList);
                 break;
             default:
-                if (label)
-                    errFlag = setLabelAddress(&labelList, label, IC);
                 errFlag = codeCommand(line, &instructionList, commandOP, &IC);
                 break;
         }
@@ -694,16 +694,23 @@ error firstRun (char *path) {
         node->data.place += IC;
         node = node->next;
     }
+    node = labelList.head;
+    while (node) {
+        if (node->data.type == data || node->data.type == string || node->data.type == entry ||
+            node->data.type == external)
+            node->data.place += IC;
+        node = node->next;
+    }
     if(errForSecond==success)
-        fprintf(stderr,"first run executed successfully.\n");
+        fprintf(stderr,"\nfirst run executed successfully.\n");
     else
         fprintf(stderr,"Error(s) were found in your code, cannot assemble.\n");
     closeFile(stream);
-    /*printList(&instructionList, NULL);
+    printList(&instructionList, NULL);
     printf("\n");
     printList(&dataList, NULL);
     printf("\n");
-    printList(&labelList, NULL);*/
+    printList(&labelList, NULL);
     secondRun(&dataList, &labelList, &instructionList, path, errForSecond);
     clearList(&instructionList, NULL);
     clearList(&labelList, NULL);

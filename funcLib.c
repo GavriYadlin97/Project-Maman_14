@@ -210,7 +210,7 @@ error getOneLine(char **line_out, FILE *fp) {
     checkAlloc(buffer);
     while (1) {
         char current = (char) fgetc(fp);
-        if (current == EOF || current == '\n' || current == '\r') {
+        if (current == EOF || current == '\n') {
             /*buffer[bytes_readen] = '\n';*/
             buffer[bytes_readen] = '\0';
             *line_out = my_strdup(buffer);
@@ -224,7 +224,10 @@ error getOneLine(char **line_out, FILE *fp) {
                 return memoryAllocErr;
             }
         }
-        else
+        else {
+            if(current == '\r')
+                buffer[bytes_readen++] = '\0';
             buffer[bytes_readen++] = current;
+        }
     }
 }

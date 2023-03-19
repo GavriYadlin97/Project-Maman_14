@@ -209,8 +209,6 @@ error preAssembler(char* fileName){
                     fprintf(stderr,"Error: The definition of the macro \"%s\" is incorrect\n",line);
                     continue;
                 }
-                name= malloc(sizeof (char )* strlen(linecpy)+1);
-                name ="";
                 getToken(&linecpy, &name, " ");
                 if(name){/* definition of macro with space*/
                     err = mcrNameIncorrect;
