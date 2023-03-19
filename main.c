@@ -5,7 +5,6 @@
 
 int main(int argc, char *argv[]) {
     int i;
-    error errFlag = success;
     for (i = 1; i < argc; i++) {
         if (preAssembler(argv[i]) == success)
             firstRun(argv[i]);

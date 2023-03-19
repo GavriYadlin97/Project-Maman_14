@@ -722,7 +722,6 @@ error secondRun(list* dataList, list* labelList, list* instructionList,char* fil
     Node *currentNode = NULL, *nodeOut = NULL;
     int i, cntEnt = 0, cntExt = 0;
     FILE *fpObj = NULL, *fpEnt = NULL, *fpExt = NULL;
-    char place[3];
     currentNode = instructionList->head;
     for (i = 0; i < instructionList->count; i++) {
         /*If it's a label and not an encoded line*/

@@ -159,8 +159,8 @@ error is_name_of_mcr(char* line,ListMcr * mcrList){
 
 
 error preAssembler(char* fileName){
-    FILE *fpAm, *fileSrc;
-    char *line,*name=NULL,*linecpy,*code="";
+    FILE *fpAm=NULL, *fileSrc=NULL;
+    char *line,*name=NULL,*linecpy;
     int i;
     char *codemcr;
     error err=success;
@@ -172,6 +172,10 @@ error preAssembler(char* fileName){
     /*checkAlloc(newNode);*/
 
     openFile(&fileSrc,fileName, ".as");
+    if(fileSrc==NULL) {
+        fprintf(stderr, "unable to open file %s, continuing to next file...", fileName);
+        return fileOpeningErr;
+    }
     createFile(&fpAm,fileName,".am");
     while (!feof(fileSrc)){
         if( getOneLine(&line,fileSrc)== success)
